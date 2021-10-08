@@ -8,6 +8,9 @@ data {
   int id_firm[N];
   int F;
   matrix[N,3] X;
+  int isn_z[N];
+  real zemcorr_mean[C-1];
+  real zemcorr_sd[C-1];
   real prior_mu[C];
   int num_knots;
   vector[num_knots] knots;
@@ -27,6 +30,7 @@ parameters {
   real<lower=0> sigma_epsilon;
   real eta[C];
   real<lower=0> tau[C];
+  real zemm_corr[C];
 }
 transformed parameters {
   matrix[num_basis,C] a;
@@ -48,6 +52,11 @@ model {
   for (c in 1:C) {
     lambda[,c] ~ normal(0, sigma_lambda[c]);
     a_raw[,c] ~ normal(0, 1);
+      if (c < 12) {
+        zemm_corr[c] ~ normal(zemcorr_mean, zemcorr_sd);
+      } else {
+        zemm_corr[12] ~ normal(0, .01);
+      }
   }
   for (x in 1:3)
     beta[x,] ~ normal(0, sigma_beta[x]);
@@ -58,6 +67,7 @@ model {
                            inv_logit(a0[id_cand[i]]*id_date[i] + to_row_vector(a[,id_cand[i]])*B[,id_date[i]] +
                                        lambda[id_firm[i],id_cand[i]] +
                                        X[i,] * beta[,id_cand[i]] +
+                                       isn_z[i] * zemm_corr[id_cand[i]] +
                                        eta[id_cand[i]] * epsilon[i]));
 }
 generated quantities {

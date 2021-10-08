@@ -16,7 +16,7 @@
 rm(list = ls())
 
 # Set working directory
-setwd("~/Documents/Perso/Divers/Polling2022/")
+setwd("~/Dropbox/PollsFrance2022/")
 options(mc.cores = parallel::detectCores())
 
 # Packages
@@ -25,9 +25,11 @@ library(tidylog)
 library(cmdstanr)
 library(readxl)
 library(HDInterval)
+library(splines)
 
 # Commands & Functions
 "%nin%" <- Negate("%in%")
+logit <- function(x) log(x/(1-x))
 
 
 ## Data
@@ -51,8 +53,10 @@ scale_factor <- function(variable) {
 }
 
 # Prepare data
-data <- read_excel("sondages.xlsx") %>% 
+data <- read_excel("PollsData.xlsx") %>% 
   mutate(c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
+  filter(!is.na(c_zemmour) | id %in% c(10, 5)) %>%
+  mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>% 
   gather(candidate, share, c_poutou:c_repub) %>% 
   filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
            !is.na(share)) %>% 
@@ -80,10 +84,61 @@ data <- read_excel("sondages.xlsx") %>%
   mutate(id_firm = cur_group_id(),
          id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870)
 
+#### CORRECT FOR ZEMMOUR OMMISSION ####
+data_zem <- read_excel("PollsData.xlsx") %>% 
+  mutate(c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
+  filter(id %in% c(1, 2, 5, 6, 9)) %>%
+  mutate(isn_z = ifelse(is.na(c_zemmour), 1, 0)) %>% 
+  gather(candidate, share, c_poutou:c_repub) %>% 
+  filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
+           !is.na(share)) %>% 
+  mutate(share = case_when(share == "T_0.5" ~ 0.0025,
+                           share == "T_1.5" ~ 0.0075,
+                           share == "T_1" ~ 0.005,
+                           TRUE ~ as.numeric(share) / 100)) %>% 
+  group_by(id, candidate, isn_z) %>% 
+  mutate(share = mean(share, na.rm = TRUE),
+         n = mean(n, na.rm = TRUE),
+         id_temp = 1:n()) %>%
+  filter(id_temp == 1) %>%
+  group_by(id, isn_z) %>% 
+  mutate(share = share / sum(share)) %>%
+  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_zemmour")) %>% 
+  ungroup() %>% 
+  mutate(eff = round(n * share),
+         log_n = log(n) - mean(log(n)),
+         n = round(n)) %>% 
+  group_by(candidate) %>%
+  mutate(id_candidate = cur_group_id())
+model_zemmour_code <- cmdstan_model("ModelZemmour.stan")
+data_zemmour_model <- list(N = nrow(data_zem),
+                           tot_eff = data_zem$n,
+                           vote_eff = data_zem$eff,
+                           id_cand = data_zem$id_candidate,
+                           C = length(unique(data_zem$id_candidate)),
+                           id_poll = data_zem$id,
+                           isn_z = data_zem$isn_z,
+                           prior_mu = logit(c(.01, .04, .09, .11, .2175, .24, .0875, .05, .01, .145, .02)))
+estimated_zemmour_model <- model_zemmour_code$sample(data = data_zemmour_model,
+                                                     seed = 94836,
+                                                     chains = 4,
+                                                     parallel_chains = 4,
+                                                     iter_warmup = 2000,
+                                                     iter_sampling = 2000,
+                                                     refresh = 1000,
+                                                     save_warmup = FALSE)
+zemmour_draws <- estimated_zemmour_model$draws(variables = "kappa", format = "draws_df")
+zemmour_correct <- apply(zemmour_draws[,1:11], 2, function(x) c(mean(x), sd(x))) %>%
+  t() %>% as.data.frame() %>% 
+  rename(zemcorr_mean = V1,
+         zemcorr_sd = V2) %>% 
+  mutate(id_c = 1:11)
+  
+  
+
 
 #### MODEL ####
-logit <- function(x) log(x/(1-x))
-model_code <- cmdstan_model("model_splines.stan")
+model_code <- cmdstan_model("ModelSplines.stan")
 num_knots <- 3
 spline_degree <- 3
 num_basis <- num_knots + spline_degree - 1
@@ -97,6 +152,9 @@ data_spline_model <- list(N = nrow(data),
                           id_firm = data$id_firm,
                           F = length(unique(data$id_firm)),
                           X = data[, c("log_n", "unsure_1", "unsure_2")],
+                          isn_z = data$isnot_zemmour,
+                          zemcorr_mean = zemmour_correct$zemcorr_mean,
+                          zemcorr_sd = zemmour_correct$zemcorr_sd,
                           prior_mu = logit(c(.01, .04, .09, .11, .2175, .24, .0875, .05, .01, .145, .02, .07)),
                           num_knots = num_knots,
                           knots = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
@@ -170,7 +228,7 @@ polls <- plot_spline_estimates %>%
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Estimation des intentions de vote au 1er tour de l'élection présidentielle",
        subtitle = paste0("Dernière mise à jour: ", Sys.Date()),
-       caption = "Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe et Odoxa depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales \ncaractéristiques des enquêtes. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense de les distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, \nles intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre.") +
+       caption = "Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe et Odoxa depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains aggrège les intentions de vote en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, \nen donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense de les distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, \nles intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre.") +
   theme_bw() +
   geom_hline(yintercept = 0) +
   theme(panel.grid = element_blank(),
