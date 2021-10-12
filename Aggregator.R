@@ -2,7 +2,7 @@
 # Flavien Ganter
 
 # Created on October 4, 2021
-# Last modified on October 4, 2021
+# Last modified on October 12, 2021
 
 
 
@@ -55,7 +55,7 @@ scale_factor <- function(variable) {
 # Prepare data
 data <- read_excel("PollsData.xlsx") %>% 
   mutate(c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
-  filter(!is.na(c_zemmour) | id %in% c(10, 5)) %>%
+  filter(!is.na(c_zemmour) | id %in% c(10, 5, 13)) %>%
   mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>% 
   gather(candidate, share, c_poutou:c_repub) %>% 
   filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
@@ -87,7 +87,10 @@ data <- read_excel("PollsData.xlsx") %>%
 #### CORRECT FOR ZEMMOUR OMMISSION ####
 data_zem <- read_excel("PollsData.xlsx") %>% 
   mutate(c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
-  filter(id %in% c(1, 2, 5, 6, 9)) %>%
+  filter(id %in% c(1, 2, 5, 6, 9, 13, 14)) %>%
+  group_by(id) %>% 
+  mutate(id_new = cur_group_id()) %>% 
+  ungroup() %>% 
   mutate(isn_z = ifelse(is.na(c_zemmour), 1, 0)) %>% 
   gather(candidate, share, c_poutou:c_repub) %>% 
   filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
@@ -116,7 +119,8 @@ data_zemmour_model <- list(N = nrow(data_zem),
                            vote_eff = data_zem$eff,
                            id_cand = data_zem$id_candidate,
                            C = length(unique(data_zem$id_candidate)),
-                           id_poll = data_zem$id,
+                           id_poll = data_zem$id_new,
+                           P = length(unique(data_zem$id_new)),
                            isn_z = data_zem$isn_z,
                            prior_mu = logit(c(.01, .04, .09, .11, .2175, .24, .0875, .05, .01, .145, .02)))
 estimated_zemmour_model <- model_zemmour_code$sample(data = data_zemmour_model,
@@ -228,7 +232,7 @@ polls <- plot_spline_estimates %>%
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Estimation des intentions de vote au 1er tour de l'élection présidentielle",
        subtitle = paste0("Dernière mise à jour: ", Sys.Date()),
-       caption = "Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe et Odoxa depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains aggrège les intentions de vote en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, \nen donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense de les distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, \nles intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre.") +
+       caption = "Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains aggrège les intentions de vote en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, \nen donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense de les distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, \nles intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre.") +
   theme_bw() +
   geom_hline(yintercept = 0) +
   theme(panel.grid = element_blank(),
@@ -252,6 +256,6 @@ polls <- plot_spline_estimates %>%
                limits = c(as.Date("2021-09-01"), as.Date("2022-04-10")))
 
 
-ggsave(polls, filename = "plot_polls.pdf",
+ggsave(polls, filename = "PollsFrance2022_latest.pdf",
        height = 10, width = 14, device = cairo_pdf)
 
