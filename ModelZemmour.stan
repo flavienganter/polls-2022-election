@@ -5,12 +5,13 @@ data {
   int id_cand[N];
   int C;
   int id_poll[N];
+  int P;
   int isn_z[N];
   real prior_mu[C];
 }
 parameters {
   real mu[C];
-  real lambda[C];
+  real lambda[P];
   real kappa[C];
 }
 model {
