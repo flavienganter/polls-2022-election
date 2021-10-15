@@ -74,5 +74,5 @@ generated quantities {
   matrix[D,C] prob;
   for (d in 1:D)
     for (c in 1:C)
-      prob[d,c] = inv_logit(a0[c]*d + to_row_vector(a[,c])*B[,d]);
+      prob[d,c] = inv_logit(a0[c]*d + to_row_vector(a[,c])*B[,d] + beta[3,c]);
 }
