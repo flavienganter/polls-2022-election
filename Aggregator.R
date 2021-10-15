@@ -185,7 +185,7 @@ spline_draws <- estimated_spline_model$draws(variables = "prob", format = "draws
 #### PLOT ####
 
 ## Prepare table
-plot_spline_estimates <- apply(spline_draws[,1:480], 2, function(x) c(hdi(x), hdi(x, .5), median(x))) %>%
+plot_spline_estimates <- apply(spline_draws[,1:(ncol(spline_draws)-3)], 2, function(x) c(hdi(x), hdi(x, .5), median(x))) %>%
   t() %>% as.data.frame()
 names(plot_spline_estimates) <- c("lower95", "upper95", "lower50", "upper50", "median")
 plot_spline_estimates$coef <- row.names(plot_spline_estimates)
