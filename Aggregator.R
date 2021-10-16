@@ -32,7 +32,7 @@ library(splines)
 logit <- function(x) log(x/(1-x))
   
   # Function to center and standardize continuous and categorical variables
-  # (Helpful for Bayesian prior, see Gelman et al. 2008)
+  # (helpful for Bayesian prior, see Gelman et al. 2008)
   scale_cont <- function(variable) (variable - mean(variable)) / (2 * weighted.sd(variable))
   scale_factor <- function(variable) {
     scale_dummy <- function(dummy) ifelse(dummy == 1, 1 - mean(dummy == 1), - mean(dummy == 1))
@@ -50,131 +50,7 @@ logit <- function(x) log(x/(1-x))
     return(out_variable)
   }
   
-  
-  
 
-#### CORRECTION FOR THE OMISSION OF ZEMMOUR IN INITIAL POLLS ####
-  
-  ## Eric Zemmour was not systematically included in the polls in 
-  ## early September. When polling firms tested hypotheses with and 
-  ## without EZ, I include only results from questions that tested
-  ## EZ. When they did not test hypotheses with EZ, I do include 
-  ## results from these polls to not waste too much information,
-  ## but I adjust the estimates accordingly. To do so, I leverage
-  ## polls that asked questions both with and without EZ, and I
-  ## use within poll variations in September to estimate, for each
-  ## potential candidate, the bias of not including EZ among the
-  ## available candidates. 
-
-if (0) { ## Change to 1, or comment out, to estimate the correction model
-  
-  ## Prepare data
-  data_zem <- read_excel("PollsData.xlsx") %>% 
-    
-    # Identify the Les Républicains candidate in each hypothesis
-    mutate(c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
-    
-    # Keep hybrid polls (w/ and w/o EZ) only
-    filter(id %in% c(1, 2, 5, 6, 9, 13, 14)) %>%
-    
-    # Create a poll ID for hybrid polls
-    group_by(id) %>% 
-    mutate(id_new = cur_group_id()) %>% 
-    ungroup() %>% 
-    
-    # Identify hypotheses w/o EZ
-    mutate(isn_z = ifelse(is.na(c_zemmour), 1, 0)) %>%
-    
-    # Wide to long
-    gather(candidate, share, c_poutou:c_repub) %>% 
-    
-    # Remove rows corresponding to untested candidates
-    filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
-             !is.na(share)) %>% 
-    
-    # Recode truncated values and switch to share
-      ## The uncertainty due to truncated values could be modeled directly,
-      ## but I simplify things here, and adopt a deterministic imputation
-      ## approach (namely, I assign a value that is equal to half of the
-      ## truncation value).
-    mutate(share = case_when(share == "T_0.5" ~ 0.0025,
-                             share == "T_1.5" ~ 0.0075,
-                             share == "T_1" ~ 0.005,
-                             TRUE ~ as.numeric(share) / 100)) %>% 
-    
-    # Average results from the various hypothesis within polls and keep
-    # one observation per poll
-    group_by(id, candidate, isn_z) %>% 
-    mutate(share = mean(share, na.rm = TRUE),
-           n = mean(n, na.rm = TRUE),
-           id_temp = 1:n()) %>%
-    filter(id_temp == 1) %>%
-    
-    # Standardize distributions to account for the fact that
-    # the number of candidates tested varies between and within polls
-    group_by(id, isn_z) %>% 
-    mutate(share = share / sum(share)) %>%
-    
-    # Remove candidates who are not consistently tested, and EZ
-      ## Estimates for these candidates are very noisy, and not
-      ## necessarily relevant. Omitting then does not affect the
-      ## estimation for other candidates. EZ is omitted because
-      ## he does not play a part in the adjustment model.
-    filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_zemmour")) %>% 
-    ungroup() %>%
-    
-    # Switch from share for numbers, and create a logged sample size variable
-    mutate(eff = round(n * share),
-           log_n = log(n) - mean(log(n)),
-           n = round(n)) %>% 
-    
-    # Create a candidate ID
-    group_by(candidate) %>%
-    mutate(id_candidate = cur_group_id())
-  
-  # Gather data to feed the model
-    ## prior_mu is the prior for each candidate score based on the latest poll in August
-  data_zemmour_model <- list(N = nrow(data_zem),
-                             tot_eff = data_zem$n,
-                             vote_eff = data_zem$eff,
-                             id_cand = data_zem$id_candidate,
-                             C = length(unique(data_zem$id_candidate)),
-                             id_poll = data_zem$id_new,
-                             P = length(unique(data_zem$id_new)),
-                             isn_z = data_zem$isn_z,
-                             prior_mu = logit(c(.01, .04, .09, .11, .2175, .24, .0875, .05, .01, .145, .02)))
-  
-  
-  ## Model
-  
-  # Compile model
-  model_zemmour_code <- cmdstan_model("ModelZemmour.stan")
-  
-  # Estimate model
-  estimated_zemmour_model <- model_zemmour_code$sample(data = data_zemmour_model,
-                                                       seed = 94836,
-                                                       chains = 4,
-                                                       parallel_chains = 4,
-                                                       iter_warmup = 2000,
-                                                       iter_sampling = 2000,
-                                                       refresh = 1000,
-                                                       save_warmup = FALSE)
-  
-  # Get posterior draws of bias estimates
-  zemmour_draws <- estimated_zemmour_model$draws(variables = "kappa", format = "draws_df")
-  zemmour_correct <- apply(zemmour_draws[,1:11], 2, function(x) c(mean(x), sd(x))) %>%
-    t() %>% as.data.frame() %>% 
-    rename(zemcorr_mean = V1,
-           zemcorr_sd = V2) %>% 
-    mutate(id_c = 1:11)
-  save(zemmour_correct, file = "CorrectionZemmour.RData")
-  
-}
-  
-## Load (already estimated) correction factors
-load("CorrectionZemmour.RData")
-  
-  
   
 #### POLL AGGREGATION MODEL ####
 
@@ -182,18 +58,15 @@ load("CorrectionZemmour.RData")
 ## Prepare data
 data <- read_excel("PollsData.xlsx") %>% 
   
-  # Identify the Les Républicains candidate in each hypothesis
-  mutate(c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
-  
-  # Remove results w/o EZ, except for the polls for which there
-  # was no hypothesis w/ EZ (adjusted in the model)
-  filter(!is.na(c_zemmour) | id %in% c(10, 5, 13)) %>%
+  # Create hypothesis ID and identify the Les Républicains candidate in each hypothesis
+  mutate(id_hyp = 1:n(),
+         c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
   
   # Identify polls w/o EZ
   mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>% 
   
   # Wide to long
-  gather(candidate, share, c_poutou:c_repub) %>% 
+  gather(candidate, share, c_poutou:c_lagarde, c_repub) %>% 
   
   # Remove rows corresponding to untested candidates
   filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
@@ -209,24 +82,15 @@ data <- read_excel("PollsData.xlsx") %>%
                            share == "T_1" ~ 0.005,
                            TRUE ~ as.numeric(share) / 100)) %>% 
   
-  # Average results from the various hypothesis within polls and keep
-  # one observation per poll
-  group_by(id, candidate) %>% 
-  mutate(share = mean(share, na.rm = TRUE),
-         n = mean(n, na.rm = TRUE),
-         id_temp = 1:n()) %>%
-  filter(id_temp == 1) %>%
-  
   # Standardize distributions to account for the fact that
   # the number of candidates tested varies between and within polls
-  group_by(id) %>% 
+  group_by(id_hyp) %>% 
   mutate(share = share / sum(share)) %>%
   
-  # Remove candidates who are not consistently tested, and EZ
+  # Remove candidates who are not consistently tested
     ## Estimates for these candidates are very noisy, and not
     ## necessarily relevant. Omitting then does not affect the
-    ## estimation for other candidates. EZ is omitted because
-    ## he does not play a part in the adjustment model.
+    ## estimation for other candidates
   filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot")) %>% 
   ungroup() %>% 
   
@@ -236,7 +100,6 @@ data <- read_excel("PollsData.xlsx") %>%
   # vote, or a mix of both)
   mutate(eff = round(n * share),
          log_n = log(n) - mean(log(n)),
-         n = round(n),
          unsure_1 = scale_factor(variable = unsure)[[1]],
          unsure_2 = scale_factor(variable = unsure)[[2]]) %>% 
   
@@ -268,13 +131,12 @@ data_spline_model <- list(N = nrow(data),
                           id_cand = data$id_candidate,
                           C = length(unique(data$id_candidate)),
                           id_date = data$id_date,
+                          id_poll = data$id,
+                          P = length(unique(data$id)),
                           id_firm = data$id_firm,
                           F = length(unique(data$id_firm)),
                           X = data[, c("log_n", "unsure_1", "unsure_2")],
                           isn_z = data$isnot_zemmour,
-                          zemcorr_mean = zemmour_correct$zemcorr_mean,
-                          zemcorr_sd = zemmour_correct$zemcorr_sd,
-                          prior_mu = logit(c(.01, .04, .09, .11, .2175, .24, .0875, .05, .01, .145, .02, .07)),
                           num_knots = num_knots,
                           knots = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
                           spline_degree = spline_degree,
@@ -292,6 +154,8 @@ estimated_spline_model <- model_code$sample(data = data_spline_model,
                                             parallel_chains = 4,
                                             iter_warmup = 2000,
                                             iter_sampling = 2000,
+                                            adapt_delta = .99,
+                                            max_treedepth = 15,
                                             refresh = 1000,
                                             save_warmup = FALSE)
 
@@ -408,6 +272,6 @@ poll_plot <- plot_spline_estimates %>%
 
 
 ## Export plot
-ggsave(polls, filename = "PollsFrance2022_latest.pdf",
+ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
        height = 10, width = 14, device = cairo_pdf)
 
