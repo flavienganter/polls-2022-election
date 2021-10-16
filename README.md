@@ -43,3 +43,12 @@ In order to partially pool information among the various scenarios of the same p
 The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, two (standardized) dummies that adjust for the subsample of respondents that the polling organization calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and a dummy that flags whether Éric Zemmour was among the tested candidates.
 
 I include the Zemmour dummy because not all polls included scenarios that tested Éric Zemmour as candidate in early September. Keeping only scenarios that included Zemmour—and thus completely discarding polls that did not include a Zemmour scenario—would make the September estimates very noisy, and it would be a waste of information. Yet it remains that scenarios without Zemmour are not very informative per se, as he will very likely be candidate, and his inclusion among the candidates significantly changes voting intentions for other candidates (especially Marine Le Pen and the candidate from Les Républicains). The current specification leverages polls that included scenarios both with and without Zemmour to estimate the impact of not including him on the voting intentions for other candidates, and allows me to adjust the results from from that did not include Zemmour scenarios.
+
+## Quantity of Interest
+
+My quantity of interest is the share of the voting intentions that each candidate gets at each date since September 1, 2021, in scenarios where Éric Zemmour is a candidate, and considering not only respondents who are absolutely sure that they will vote on April 10, 2022, but excluding those who are relatively certain that they will _not_ vote. Ideally, I would weight each respondent by how sure they are that they will vote for the first round of the 2022 presidential election, but I do not have the data to implement that strategy.
+
+## Potential Improvements
+
+- Assign each poll with the entire fielding period, instead of just with the median day of the period the poll was fielded
+- Propagate the uncertainty related to the truncation of the voting intention share of some "small" candidates (would not make a big difference—mostly aesthetic)
