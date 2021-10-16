@@ -155,7 +155,7 @@ estimated_spline_model <- model_code$sample(data = data_spline_model,
                                             iter_warmup = 2000,
                                             iter_sampling = 2000,
                                             adapt_delta = .99,
-                                            max_treedepth = 15,
+                                            max_treedepth = 12,
                                             refresh = 1000,
                                             save_warmup = FALSE)
 
