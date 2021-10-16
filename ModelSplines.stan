@@ -64,20 +64,20 @@ model {
   
   // Priors
   a0 ~ normal(0, 2);
-  tau_a ~ student_t(3, 0, sigma_a);
+  tau_a ~ normal(0, sigma_a);
   sigma_a ~ student_t(3, 0, 1);
   for (x in 1:3)
     beta[x,] ~ normal(0, sigma_beta[x]);
-  tau_mu ~ student_t(3, 0, sigma_mu);
-  tau_lambda ~ student_t(3, 0, sigma_lambda);
+  tau_mu ~ normal(0, sigma_mu);
+  tau_lambda ~ normal(0, sigma_lambda);
   sigma_mu ~ student_t(3, 0, 1);
   sigma_lambda ~ student_t(3, 0, 1);
   sigma_beta ~ student_t(3, 0, 1);
   sigma_gamma ~ student_t(3, 0, 1);
   for (c in 1:C) {
     a_raw[,c] ~ normal(0, 2);
-    mu[,c] ~ normal(0, 2);
-    lambda[,c] ~ normal(0, 2);
+    mu[,c] ~ normal(0, 1);
+    lambda[,c] ~ normal(0, 1);
     if (c < 12) {
       gamma[c] ~ normal(0, sigma_gamma);
     } else {
