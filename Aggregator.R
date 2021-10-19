@@ -161,6 +161,7 @@ estimated_spline_model <- model_code$sample(data = data_spline_model,
 
 # Get posterior draws
 spline_draws <- estimated_spline_model$draws(variables = "prob", format = "draws_df")
+save(spline_draws, file = "LatestDraws.RData")
 
 
 
