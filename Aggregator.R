@@ -2,7 +2,7 @@
 # Flavien Ganter
 
 # Created on October 4, 2021
-# Last modified on October 15, 2021
+# Last modified on October 22, 2021
 
 
 
@@ -26,6 +26,7 @@ library(cmdstanr)
 library(readxl)
 library(HDInterval)
 library(splines)
+extrafont::loadfonts()
 
 # Commands & Functions
 "%nin%" <- Negate("%in%")
@@ -112,7 +113,9 @@ data <- read_excel("PollsData.xlsx") %>%
     ## the median, if the median is not properly defined.
   group_by(firm) %>% 
   mutate(id_firm = cur_group_id(),
-         id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870)
+         id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870) %>% 
+  group_by(month) %>% 
+  mutate(id_month = cur_group_id())
 
 
 ## Model
@@ -131,6 +134,8 @@ data_spline_model <- list(N = nrow(data),
                           id_cand = data$id_candidate,
                           C = length(unique(data$id_candidate)),
                           id_date = data$id_date,
+                          id_month = data$id_month,
+                          M = length(unique(data$id_month)),
                           id_poll = data$id,
                           P = length(unique(data$id)),
                           id_firm = data$id_firm,
@@ -208,19 +213,9 @@ plot_spline_estimates <- plot_spline_estimates %>%
 
 ## Create plot
 
-# Plot theme components
-
-  # Nice y axis
-  base_breaks_y <- function(x, add = 0){
-    b <- pretty(x)
-    d <- data.frame(x = as.Date(-Inf), xend = as.Date(-Inf), y = min(b), yend = max(b) + add)
-    list(geom_segment(data = d, aes(x = x, y = y, xend = xend, yend = yend), inherit.aes = FALSE, size = .7),
-         scale_y_continuous(breaks = b))
-  }
-  
-  # Define candidate colors
-  candidate_colors <- c("#f7b4b4", "#af8080", "#0070c0", "#ff6600", "black", "#ff1300",
-                        "#b30d00", "#002060", "#c80589", "#7030a0", "#8fa02a", "#00b050")
+# Define candidate colors
+candidate_colors <- c("#f7b4b4", "#af8080", "#0070c0", "#ff6600", "black", "#ff1300",
+                      "#b30d00", "#002060", "#c80589", "#7030a0", "#8fa02a", "#00b050")
   
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
@@ -233,34 +228,32 @@ poll_plot <- plot_spline_estimates %>%
   
   # Show 1st round
   geom_vline(xintercept = as.Date("2022-04-10"), color = "gray", size = 2) +
-  annotate(geom = "text", x = as.Date("2022-03-01"), y = 25, family = "HelveticaNeueCond",
+  annotate(geom = "text", x = as.Date("2022-02-26"), y = 24, family = "ITC Franklin Gothic Std Book",
            label = "10 avril 2022 – Premier tour de l'élection présidentielle") +
-  annotate("segment", x = as.Date("2022-03-29"), y = 24.9, xend = as.Date("2022-04-09"), yend = 24,
+  annotate("segment", x = as.Date("2022-03-29"), y = 23.9, xend = as.Date("2022-04-09"), yend = 23,
            size = .4, arrow = arrow(angle = 30, length = unit(2.5, "mm"))) +
   
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
-       title = "Estimation des intentions de vote au 1er tour de l'élection présidentielle",
-       subtitle = paste0("Dernière mise à jour: ", Sys.Date()),
-       caption = "Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains agrègent celles en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, \nen donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, \nles intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre.") +
+       title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne \ntenant compte des principales caractéristiques des enquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains \nagrègent celles en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, en donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les \nplus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans \nle plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
   
   # Specify plot theme
-  theme_bw() +
-  geom_hline(yintercept = 0) +
-  theme(panel.grid = element_blank(),
-        panel.border = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.length.y = unit(.3, "cm"),
-        axis.text.x = element_text(vjust = 15),
+  theme_minimal(base_family = "ITC Franklin Gothic Std") +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x = element_text(vjust = 17),
         axis.text = element_text(size = 10),
-        axis.title.y = element_text(size = 12),
+        axis.title.y = element_blank(),
         axis.title.x = element_blank(),
-        text = element_text(family = "HelveticaNeueCond"),
-        plot.title = element_text(size = 20),
+        plot.title = element_text(size = 25, face = "bold"),
+        plot.title.position = "plot",
         legend.box = "vertical",
         legend.title = element_blank(),
-        legend.position = c(.79,1)) +
-  base_breaks_y(c(0, 30), add = .01) +
+        legend.position = c(.75, .95),
+        plot.caption.position = "plot",
+        
+        plot.caption = element_text(color = "gray30", margin = margin(t = 10), hjust = 0)) +
   
   # Candidate colors
   guides(color = guide_legend(nrow = 3, byrow = TRUE)) +
@@ -268,8 +261,11 @@ poll_plot <- plot_spline_estimates %>%
   scale_fill_manual(values = candidate_colors) +
   
   # Date axis
-  scale_x_date(expand = c(.01,0), date_breaks = "1 month", date_labels = "%b",
-               limits = c(as.Date("2021-09-01"), as.Date("2022-04-10")))
+  scale_x_date(expand = c(.005,1), date_breaks = "1 month", date_labels = "%b",
+               limits = c(as.Date("2021-09-01"), as.Date("2022-04-10"))) +
+  
+  # Percent axis
+  scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = seq(5, 30, 5), lim = c(0, 27))
 
 
 ## Export plot
