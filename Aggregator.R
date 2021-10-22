@@ -228,7 +228,7 @@ poll_plot <- plot_spline_estimates %>%
   
   # Show 1st round
   geom_vline(xintercept = as.Date("2022-04-10"), color = "gray", size = 2) +
-  annotate(geom = "text", x = as.Date("2022-02-26"), y = 24, family = "ITC Franklin Gothic Std Book",
+  annotate(geom = "text", x = as.Date("2022-02-26"), y = 24, family = "ITC Franklin Gothic Std",
            label = "10 avril 2022 – Premier tour de l'élection présidentielle") +
   annotate("segment", x = as.Date("2022-03-29"), y = 23.9, xend = as.Date("2022-04-09"), yend = 23,
            size = .4, arrow = arrow(angle = 30, length = unit(2.5, "mm"))) +
@@ -239,14 +239,15 @@ poll_plot <- plot_spline_estimates %>%
        caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne \ntenant compte des principales caractéristiques des enquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains \nagrègent celles en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, en donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les \nplus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans \nle plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
   
   # Specify plot theme
-  theme_minimal(base_family = "ITC Franklin Gothic Std") +
+  theme_minimal() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
+        text = element_text(family = "ITC Franklin Gothic Std"),
         axis.text.x = element_text(vjust = 17),
         axis.text = element_text(size = 10),
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
-        plot.title = element_text(size = 25, face = "bold"),
+        plot.title = element_text(size = 25, family = "ITC Franklin Gothic Std", face = "bold"),
         plot.title.position = "plot",
         legend.box = "vertical",
         legend.title = element_blank(),
