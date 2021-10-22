@@ -38,11 +38,19 @@ In order to partially pool information among the various scenarios of the same p
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_lambda.png?raw=true)
 
+### Zemmour Adjustment
+
+_Z<sub>i</sub>_ is a (standardized) dummy that flags whether Éric Zemmour was among the tested candidates. I include it because not all polls included scenarios that tested Éric Zemmour as candidate in early September. Keeping only scenarios that included Zemmour—and thus completely discarding polls that did not include a Zemmour scenario—would make the September estimates very noisy, and it would be a waste of information. Yet it remains that scenarios without Zemmour are not very informative per se, as he will very likely be candidate, and his inclusion among the candidates significantly changes voting intentions for other candidates (especially Marine Le Pen and the candidate from Les Républicains). The current specification leverages polls that include scenarios both with and without Zemmour to estimate the impact of not including him on the voting intentions for other candidates, and thereby allows me to adjust the results from polls that do not include Zemmour scenarios. I allow the coefficient to vary over time by estimating a distinct coefficient every month, with a random-walk prior:
+
+![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_gamma1.png?raw=true)
+
+![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_gamma2.png?raw=true)
+
 ### Other Covariates
 
-The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, two (standardized) dummies that adjust for the subsample of respondents that the polling organization calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and a dummy that flags whether Éric Zemmour was among the tested candidates.
+The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, and two (standardized) dummies that adjust for the subsample of respondents that the polling organization calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample). To allow the effect of these covariates to vary as the election date gets closer, these coefficients incorporate a time trend:
 
-I include the Zemmour dummy because not all polls included scenarios that tested Éric Zemmour as candidate in early September. Keeping only scenarios that included Zemmour—and thus completely discarding polls that did not include a Zemmour scenario—would make the September estimates very noisy, and it would be a waste of information. Yet it remains that scenarios without Zemmour are not very informative per se, as he will very likely be candidate, and his inclusion among the candidates significantly changes voting intentions for other candidates (especially Marine Le Pen and the candidate from Les Républicains). The current specification leverages polls that include scenarios both with and without Zemmour to estimate the impact of not including him on the voting intentions for other candidates, and thereby allows me to adjust the results from polls that do not include Zemmour scenarios.
+![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta.png?raw=true)
 
 ## Quantity of Interest
 
