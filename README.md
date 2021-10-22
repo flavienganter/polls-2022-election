@@ -16,7 +16,9 @@ For each scenario _i_ (part of poll _p_ = _p[i]_) and each candidate _c_, _y<sub
 
 where 𝜽<sub>_ci_</sub> is modeled as
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/theta.png?raw=true).
+![](https://github.com/flavienganter/polls-2022-election/blob/main/img/theta.png?raw=true)
+
+and _date<sub>i</sub>_ is the date, centered so that _date<sub>i</sub>_ = 1 on September 1, 2021.
 
 ### Splines
 
@@ -51,6 +53,8 @@ _z<sub>i</sub>_ is a (standardized) dummy that flags whether Éric Zemmour was a
 The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, and two (standardized) dummies that adjust for the subsample of respondents that the polling organization calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample). To allow the effect of these covariates to vary as the election date gets closer, these coefficients incorporate a time trend:
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta.png?raw=true)
+
+where 𝛽<sub>_c_</sub>(_date<sub>i</sub>_)≡(𝛽<sub>_c_</sub><sup>_(u)_</sup>(_date<sub>i</sub>_))<sub>_u_</sub>.
 
 ## Quantity of Interest
 
