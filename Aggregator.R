@@ -116,6 +116,7 @@ data <- read_excel("PollsData.xlsx") %>%
          id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870) %>% 
   group_by(month) %>% 
   mutate(id_month = cur_group_id())
+save(data, file = "PollsData.RData")
 
 
 ## Model
@@ -169,6 +170,17 @@ spline_draws <- estimated_spline_model$draws(variables = "prob", format = "draws
 save(spline_draws, file = "LatestDraws.RData")
 
 
+load("model_aggregator_uncentered.RData")
+spline_draws <- data.frame(`prob[1,1]` = extract(aggregator_model, pars = "prob[1,1]"))
+colnames(spline_draws) <- "prob[1,1]"
+for (i in 1:54) {
+  for (j in 1:12) {
+    if (!(i == 1 & j == 1)) {
+      spline_draws <- cbind(spline_draws,
+                            `prob[i,j]` = extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
+    }
+  }
+}
 
 
 #### GENERATE PLOT ####
@@ -177,8 +189,7 @@ save(spline_draws, file = "LatestDraws.RData")
 ## Prepare table for plot
 
 # Calculate statistics of interest
-plot_spline_estimates <- apply(spline_draws[,1:(ncol(spline_draws)-3)], 2,
-                               function(x) c(hdi(x), hdi(x, .5), median(x))) %>%
+plot_spline_estimates <- apply(spline_draws, 2, function(x) c(hdi(x), hdi(x, .5), median(x))) %>%
   t() %>% as.data.frame()
 
 # Rename names and columns
@@ -219,16 +230,26 @@ candidate_colors <- c("#f7b4b4", "#af8080", "#0070c0", "#ff6600", "black", "#ff1
   
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
+  mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
+         median_label = case_when(label == "Arnaud Montebourg" ~ median + .003,
+                                  label == "Fabien Roussel" ~ median - .002,
+                                  label == "Philippe Poutou" ~ median + .0015,
+                                  label == "Nathalie Arthaud" ~ median - .0015,
+                                  !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
   # Plot data
   geom_line(aes(y = median * 100)) +
   geom_ribbon(aes(ymin = lower50 * 100, ymax = upper50 * 100, fill = candidate), alpha = .1, size = 0) +
   geom_ribbon(aes(ymin = lower95 * 100, ymax = upper95 * 100, fill = candidate), alpha = .1, size = 0) +
+
+  # Candidate labels
+  geom_text(aes(x = date + 1, y = median_label * 100, label = label), na.rm = TRUE,
+                 hjust = 0, vjust = 0, nudge_y = -.1, family = "ITC Franklin Gothic Std Book") +
   
   # Show 1st round
   geom_vline(xintercept = as.Date("2022-04-10"), color = "gray", size = 2) +
-  annotate(geom = "text", x = as.Date("2022-02-26"), y = 24, family = "ITC Franklin Gothic Std",
+  annotate(geom = "text", x = as.Date("2022-02-25"), y = 24, family = "ITC Franklin Gothic Std Book",
            label = "10 avril 2022 – Premier tour de l'élection présidentielle") +
   annotate("segment", x = as.Date("2022-03-29"), y = 23.9, xend = as.Date("2022-04-09"), yend = 23,
            size = .4, arrow = arrow(angle = 30, length = unit(2.5, "mm"))) +
@@ -242,18 +263,18 @@ poll_plot <- plot_spline_estimates %>%
   theme_minimal() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
-        text = element_text(family = "ITC Franklin Gothic Std"),
+        text = element_text(family = "ITC Franklin Gothic Std Book"),
         axis.text.x = element_text(vjust = 17),
         axis.text = element_text(size = 10),
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
         plot.title = element_text(size = 25, family = "ITC Franklin Gothic Std", face = "bold"),
         plot.title.position = "plot",
-        legend.box = "vertical",
-        legend.title = element_blank(),
-        legend.position = c(.75, .95),
+        #legend.box = "vertical",
+        #legend.title = element_blank(),
+        #legend.position = c(.75, .95),
+        legend.position = "none",
         plot.caption.position = "plot",
-        
         plot.caption = element_text(color = "gray30", margin = margin(t = 10), hjust = 0)) +
   
   # Candidate colors
