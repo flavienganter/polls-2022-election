@@ -30,80 +30,95 @@ data {
 parameters {
   
   // Splines
-  real a0[C];
-  matrix[num_basis,C] a_raw;
-  real<lower=0> tau_a[C];
-  real<lower=0> sigma_a;
-  real<lower=0> sigma_a0;
+  real alpha0[C];
+  matrix[num_basis,C] alpha_raw;
+  real<lower=0> tau_alpha[C];
+  real<lower=0> sigma_alpha;
+  real<lower=0> sigma_alpha0;
   
   // Covariates
   matrix[P,C] mu;
-  real<lower=0> tau_mu[C];
+  real tau_mu_tilde[C];
   matrix[F,C] lambda;
-  real<lower=0> tau_lambda[C];
-  matrix[3,C] beta;
-  matrix[3,C] nu;
-  real<lower=0> sigma_mu[C];
-  real<lower=0> sigma_lambda[C];
+  real tau_lambda_tilde[C];
+  matrix[3,C] tau_beta_tilde;
+  matrix[3,C] tau_nu_tilde;
+  real<lower=0> sigma_mu;
+  real<lower=0> sigma_lambda;
   real<lower=0> sigma_beta[3];
   real<lower=0> sigma_nu[3];
   
   // EZ adjustment
-  matrix[M,C] gamma;
-  real<lower=0> tau_gamma[C];
-  real<lower=0> sigma_gamma;
-  real<lower=0> sigma_gamma0;
+  matrix[M,C-1] tau_gamma_tilde;
+  real<lower=0> sigma_gamma[M-1];
   
 }
 transformed parameters {
   
+  matrix[num_basis,C] alpha;
+  real<lower=0> tau_mu[C];
+  real<lower=0> tau_lambda[C];
+  matrix[3,C] beta;
+  matrix[3,C] nu;
+  matrix[M,C] gamma;
+  
   // Spline coefficients, specified as a random walk
   // to avoid overfit
-  matrix[num_basis,C] a;
   for (c in 1:C) {
-    a[1,c] = a_raw[1,c];
+    alpha[1,c] = alpha_raw[1,c];
     for (i in 2:num_basis)
-      a[i,c] = a[i-1,c] + a_raw[i,c] * tau_a[c];
+      alpha[i,c] = alpha[i-1,c] + alpha_raw[i,c] * tau_alpha[c];
+  }
+  
+  // Uncentered parametrization
+  for (c in 1:C) {
+    tau_mu[c] = exp(sigma_mu * tau_mu_tilde[c]); 
+    tau_lambda[c] = exp(sigma_lambda * tau_lambda_tilde[c]);
+    for (x in 1:3) {
+      beta[x,c] = sigma_beta[x] * tau_beta_tilde[x,c];
+      nu[x,c] = sigma_nu[x] * tau_nu_tilde[x,c];
+    }
+    if (c < 12) {
+      gamma[1,c] = tau_gamma_tilde[1,c];
+      for (m in 2:M)
+        gamma[m,c] = gamma[m-1,c] + sigma_gamma[m-1] * tau_gamma_tilde[m,c];
+    } else {
+      for (m in 1:M)
+        gamma[m,c] = 0;
+    }
   }
   
 }
 model {
   
   // Priors
-  a0 ~ normal(0, sigma_a0);
-  tau_a ~ normal(0, sigma_a);
-  sigma_a0 ~ student_t(3, 0, 1);
-  sigma_a ~ student_t(3, 0, 1);
+  alpha0 ~ normal(0, sigma_alpha0);
+  tau_alpha ~ normal(0, sigma_alpha);
+  sigma_alpha0 ~ student_t(3, 0, 1);
+  sigma_alpha ~ student_t(3, 0, 1);
   for (x in 1:3) {
-    beta[x,] ~ normal(0, sigma_beta[x]);
-    nu[x,] ~ normal(0, sigma_nu[x]);
+    tau_beta_tilde[x,] ~ normal(0, 1);
+    tau_nu_tilde[x,] ~ normal(0, 1);
   }
-  tau_mu ~ normal(0, sigma_mu);
-  tau_lambda ~ normal(0, sigma_lambda);
-  tau_gamma ~ normal(0, sigma_gamma);
+  tau_mu_tilde ~ normal(0, 1);
+  tau_lambda_tilde ~ normal(0, 1);
   sigma_mu ~ student_t(3, 0, 1);
   sigma_lambda ~ student_t(3, 0, 1);
   sigma_beta ~ student_t(3, 0, 1);
   sigma_nu ~ student_t(3, 0, 1);
-  sigma_gamma0 ~ student_t(3, 0, 1);
   sigma_gamma ~ student_t(3, 0, 1);
   for (c in 1:C) {
-    a_raw[,c] ~ normal(0, 2);
+    alpha_raw[,c] ~ normal(0, 2);
     mu[,c] ~ normal(0, 1);
     lambda[,c] ~ normal(0, 1);
-    if (c < 12) {
-      gamma[1,c] ~ normal(0, sigma_gamma0);
-      for (m in 2:M)
-        gamma[m,c] ~ normal(gamma[1,c], tau_gamma);
-    } else {
-      gamma[,12] ~ normal(0, .01);
-    }
+    if (c < 12)
+      tau_gamma_tilde[1,c] ~ normal(0, 1);
   }
   
   // Likelihood
   for (i in 1:N)
     target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
-                                  a0[id_cand[i]] * id_date[i] + to_row_vector(a[,id_cand[i]]) * B[,id_date[i]] + // Spline
+                                  alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
                                   X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
@@ -119,6 +134,6 @@ generated quantities {
   matrix<lower=0,upper=1>[D,C] prob;
   for (d in 1:D)
     for (c in 1:C)
-      prob[d,c] = inv_logit(a0[c] * d + to_row_vector(a[,c]) * B[,d] + beta[3,c] + nu[3,c] * (d - 1));
+      prob[d,c] = inv_logit(alpha0[c] * d + to_row_vector(alpha[,c]) * B[,d] + beta[3,c] + nu[3,c] * (d - 1));
       
 }
