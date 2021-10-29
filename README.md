@@ -54,8 +54,6 @@ The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potenti
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta.png?raw=true)
 
-where 𝛽<sub>_c_</sub>(_date<sub>i</sub>_)≡(𝛽<sub>_c_</sub><sup>_(u)_</sup>(_date<sub>i</sub>_))<sub>_u_</sub>.
-
 ## Quantity of Interest
 
 My quantity of interest is the share of the voting intentions that each candidate gets at each date since September 1, 2021, in scenarios where Éric Zemmour is a candidate, and considering not only respondents who are absolutely sure that they will vote on April 10, 2022, but excluding those who are relatively certain that they will _not_ vote. Ideally, I would weight each respondent by how sure they are that they will vote for the first round of the 2022 presidential election, but I do not have the data to implement that strategy.
