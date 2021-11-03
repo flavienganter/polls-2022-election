@@ -121,6 +121,8 @@ save(data, file = "PollsData.RData")
 
 ## Model
 
+if (0) { # Model run in a separate cluster
+
 # Define splines 
 num_knots <- 4
 spline_degree <- 3
@@ -161,7 +163,7 @@ estimated_spline_model <- model_code$sample(data = data_spline_model,
                                             iter_warmup = 2000,
                                             iter_sampling = 2000,
                                             adapt_delta = .99,
-                                            max_treedepth = 12,
+                                            max_treedepth = 15,
                                             refresh = 1000,
                                             save_warmup = FALSE)
 
@@ -169,18 +171,28 @@ estimated_spline_model <- model_code$sample(data = data_spline_model,
 spline_draws <- estimated_spline_model$draws(variables = "prob", format = "draws_df")
 save(spline_draws, file = "LatestDraws.RData")
 
+}
 
-load("model_aggregator_uncentered.RData")
-spline_draws <- data.frame(`prob[1,1]` = extract(aggregator_model, pars = "prob[1,1]"))
+
+
+#### GET ESTIMATES ####
+
+# Import
+load("model_aggregator.RData")
+
+# Prepare draws
+spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:54) {
+for (i in 1:59) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
-                            `prob[i,j]` = extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
+                            `prob[i,j]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
     }
   }
 }
+
+
 
 
 #### GENERATE PLOT ####
@@ -231,10 +243,11 @@ candidate_colors <- c("#f7b4b4", "#af8080", "#0070c0", "#ff6600", "black", "#ff1
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
-         median_label = case_when(label == "Arnaud Montebourg" ~ median + .003,
-                                  label == "Fabien Roussel" ~ median - .002,
-                                  label == "Philippe Poutou" ~ median + .0015,
-                                  label == "Nathalie Arthaud" ~ median - .0015,
+         median_label = case_when(label == "Arnaud Montebourg" ~ median,
+                                  label == "Fabien Roussel" ~ median - .001,
+                                  label == "Nicolas Dupont-Aignan" ~ median + .003,
+                                  label == "Philippe Poutou" ~ median,
+                                  label == "Nathalie Arthaud" ~ median,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
@@ -270,9 +283,6 @@ poll_plot <- plot_spline_estimates %>%
         axis.title.x = element_blank(),
         plot.title = element_text(size = 25, family = "ITC Franklin Gothic Std", face = "bold"),
         plot.title.position = "plot",
-        #legend.box = "vertical",
-        #legend.title = element_blank(),
-        #legend.position = c(.75, .95),
         legend.position = "none",
         plot.caption.position = "plot",
         plot.caption = element_text(color = "gray30", margin = margin(t = 10), hjust = 0)) +
