@@ -255,14 +255,14 @@ poll_plot <- plot_spline_estimates %>%
   geom_line(aes(y = median * 100)) +
   geom_ribbon(aes(ymin = lower50 * 100, ymax = upper50 * 100, fill = candidate), alpha = .1, size = 0) +
   geom_ribbon(aes(ymin = lower95 * 100, ymax = upper95 * 100, fill = candidate), alpha = .1, size = 0) +
-
+  
   # Candidate labels
   geom_text(aes(x = date + 1, y = median_label * 100, label = label), na.rm = TRUE,
-                 hjust = 0, vjust = 0, nudge_y = -.1, family = "ITC Franklin Gothic Std Book") +
+            hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed") +
   
   # Show 1st round
   geom_vline(xintercept = as.Date("2022-04-10"), color = "gray", size = 2) +
-  annotate(geom = "text", x = as.Date("2022-02-25"), y = 24, family = "ITC Franklin Gothic Std Book",
+  annotate(geom = "text", x = as.Date("2022-03-04"), y = 24, family = "Open Sans Condensed",
            label = "10 avril 2022 – Premier tour de l'élection présidentielle") +
   annotate("segment", x = as.Date("2022-03-29"), y = 23.9, xend = as.Date("2022-04-09"), yend = 23,
            size = .4, arrow = arrow(angle = 30, length = unit(2.5, "mm"))) +
@@ -270,22 +270,26 @@ poll_plot <- plot_spline_estimates %>%
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne \ntenant compte des principales caractéristiques des enquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains \nagrègent celles en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, en donnant un poids identique aux trois candidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les \nplus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans \nle plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le \nmodèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains agrègent celles en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, en donnant un poids identique aux trois \ncandidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver \ndans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
   
   # Specify plot theme
   theme_minimal() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
-        text = element_text(family = "ITC Franklin Gothic Std Book"),
-        axis.text.x = element_text(vjust = 17),
+        panel.grid.major.y = element_line(color = "#2b2b2b", linetype = "dotted", size = 0.15),
+        text = element_text(family = "Open Sans Condensed"),
         axis.text = element_text(size = 10),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        plot.title = element_text(size = 25, family = "ITC Franklin Gothic Std", face = "bold"),
+        axis.text.x = element_text(hjust = 0),
+        axis.text.y = element_text(margin = margin(r = -2)),
+        axis.title = element_blank(),
+        axis.line.x = element_line(color = "#2b2b2b", size = 0.15),
+        axis.ticks.x = element_line(color = "#2b2b2b", size = 0.15),
+        axis.ticks.length = unit(.2, "cm"),
+        plot.title = element_text(size = 25, family = "Open Sans Condensed ExtraBold", face = "bold"),
         plot.title.position = "plot",
         legend.position = "none",
-        plot.caption.position = "plot",
-        plot.caption = element_text(color = "gray30", margin = margin(t = 10), hjust = 0)) +
+        plot.caption = element_text(color = "gray30", hjust = 0, margin = margin(t = 15)),
+        plot.margin = unit(rep(0.5, 4), "cm")) +
   
   # Candidate colors
   guides(color = guide_legend(nrow = 3, byrow = TRUE)) +
@@ -293,14 +297,15 @@ poll_plot <- plot_spline_estimates %>%
   scale_fill_manual(values = candidate_colors) +
   
   # Date axis
-  scale_x_date(expand = c(.005,1), date_breaks = "1 month", date_labels = "%b",
+  scale_x_date(expand = c(.005,1), date_breaks = "1 month",
+               date_labels = c("Avril", "Septembre", "Octobre", "Novembre", "Décembre", "Janvier", "Février", "Mars"),
                limits = c(as.Date("2021-09-01"), as.Date("2022-04-10"))) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = seq(5, 30, 5), lim = c(0, 27))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(.02, 0), breaks = seq(0, 30, 5), lim = c(0, 27))
 
 
 ## Export plot
-ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
+ggsave(poll_plot, filename = "PollsFrance2022_latest2.pdf",
        height = 10, width = 14, device = cairo_pdf)
 
