@@ -183,7 +183,7 @@ load("model_aggregator.RData")
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:59) {
+for (i in 1:65) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
@@ -306,6 +306,6 @@ poll_plot <- plot_spline_estimates %>%
 
 
 ## Export plot
-ggsave(poll_plot, filename = "PollsFrance2022_latest2.pdf",
+ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
        height = 10, width = 14, device = cairo_pdf)
 
