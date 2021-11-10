@@ -64,7 +64,9 @@ data <- read_excel("PollsData.xlsx") %>%
          c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
   
   # Identify polls w/o EZ
-  mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>% 
+  mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>%
+  filter((isnot_zemmour == 1 & month == 9) |
+           isnot_zemmour == 0) %>% 
   
   # Wide to long
   gather(candidate, share, c_poutou:c_lagarde, c_repub) %>% 

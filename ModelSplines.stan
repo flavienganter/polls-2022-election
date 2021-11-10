@@ -49,8 +49,8 @@ parameters {
   real<lower=0> sigma_nu[3];
   
   // EZ adjustment
-  matrix[M,C-1] tau_gamma_tilde;
-  real<lower=0> sigma_gamma[M-1];
+  real gamma_tilde[C-1];
+  real tau_gamma;
   
 }
 transformed parameters {
@@ -60,7 +60,7 @@ transformed parameters {
   real<lower=0> tau_lambda[C];
   matrix[3,C] beta;
   matrix[3,C] nu;
-  matrix[M,C] gamma;
+  real gamma[C];
   
   // Spline coefficients, specified as a random walk
   // to avoid overfit
@@ -79,12 +79,9 @@ transformed parameters {
       nu[x,c] = sigma_nu[x] * tau_nu_tilde[x,c];
     }
     if (c < 12) {
-      gamma[1,c] = tau_gamma_tilde[1,c];
-      for (m in 2:M)
-        gamma[m,c] = gamma[m-1,c] + sigma_gamma[m-1] * tau_gamma_tilde[m,c];
+      gamma[c] = tau_gamma * gamma_tilde[c];
     } else {
-      for (m in 1:M)
-        gamma[m,c] = 0;
+      gamma[c] = 0;
     }
   }
   
@@ -102,29 +99,39 @@ model {
   }
   tau_mu_tilde ~ normal(0, 1);
   tau_lambda_tilde ~ normal(0, 1);
+  tau_gamma ~ normal(0, 1);
   sigma_mu ~ student_t(3, 0, 1);
   sigma_lambda ~ student_t(3, 0, 1);
   sigma_beta ~ student_t(3, 0, 1);
   sigma_nu ~ student_t(3, 0, 1);
-  sigma_gamma ~ student_t(3, 0, 1);
   for (c in 1:C) {
     alpha_raw[,c] ~ normal(0, 2);
     mu[,c] ~ normal(0, 1);
     lambda[,c] ~ normal(0, 1);
-    if (c < 12)
-      tau_gamma_tilde[1,c] ~ normal(0, 1);
+    gamma_tilde[c] ~ normal(0, 1);
   }
   
   // Likelihood
-  for (i in 1:N)
-    target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
+  for (i in 1:N) {
+    if (id_month[i] == 1) {
+      target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
                                   X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
-                                  gamma[id_month[i],id_cand[i]] * isn_z[i]); // EZ omission adjustment
+                                  gamma[id_cand[i]] * isn_z[i]); // EZ omission adjustment
+    } else {
+      target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
+                                  alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
+                                  tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
+                                  tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
+                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
+                                  X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
+                                  X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)));
+    }
+  }
                                        
 }
 generated quantities {
