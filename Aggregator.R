@@ -182,12 +182,12 @@ save(spline_draws, file = "LatestDraws.RData")
 #### GET ESTIMATES ####
 
 # Import
-load("model_aggregator.RData")
+load("model_aggregator5.RData")
 
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:68) {
+for (i in 1:72) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
@@ -251,9 +251,9 @@ poll_plot <- plot_spline_estimates %>%
                                   label == "Fabien Roussel" ~ median - .002,
                                   label == "Nicolas Dupont-Aignan" ~ median + .003,
                                   label == "Philippe Poutou" ~ median,
-                                  label == "Nathalie Arthaud" ~ median - .001,
-                                  label == "Marine Le Pen" ~ median + .002,
-                                  label == "Eric Zemmour" ~ median - .002,
+                                  label == "Nathalie Arthaud" ~ median,
+                                  label == "Marine Le Pen" ~ median,
+                                  label == "Eric Zemmour" ~ median,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
@@ -308,7 +308,7 @@ poll_plot <- plot_spline_estimates %>%
                limits = c(as.Date("2021-09-01"), as.Date("2022-04-10"))) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(.02, 0), breaks = seq(0, 30, 5), lim = c(0, 27))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(.02, 0), breaks = seq(0, 30, 5), lim = c(0, 27.5))
 
 
 ## Export plot
