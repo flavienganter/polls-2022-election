@@ -100,6 +100,7 @@ model {
   tau_mu_tilde ~ normal(0, 1);
   tau_lambda_tilde ~ normal(0, 1);
   tau_gamma ~ normal(0, 1);
+  gamma_tilde ~ normal(0, 1);
   sigma_mu ~ student_t(3, 0, 1);
   sigma_lambda ~ student_t(3, 0, 1);
   sigma_beta ~ student_t(3, 0, 1);
@@ -108,7 +109,6 @@ model {
     alpha_raw[,c] ~ normal(0, 2);
     mu[,c] ~ normal(0, 1);
     lambda[,c] ~ normal(0, 1);
-    gamma_tilde[c] ~ normal(0, 1);
   }
   
   // Likelihood
