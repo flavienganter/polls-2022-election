@@ -187,7 +187,7 @@ load("model_aggregator.RData")
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:72) {
+for (i in 1:75) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
@@ -252,8 +252,8 @@ poll_plot <- plot_spline_estimates %>%
                                   label == "Nicolas Dupont-Aignan" ~ median + .003,
                                   label == "Philippe Poutou" ~ median,
                                   label == "Nathalie Arthaud" ~ median,
-                                  label == "Marine Le Pen" ~ median + .0015,
-                                  label == "Eric Zemmour" ~ median - .0015,
+                                  label == "Marine Le Pen" ~ median,
+                                  label == "Eric Zemmour" ~ median,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
