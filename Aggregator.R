@@ -128,7 +128,7 @@ save(data, file = "PollsData.RData")
 if (0) { # Model run in a separate cluster
 
 # Define splines 
-num_knots <- 4
+num_knots <- 6
 spline_degree <- 3
 num_basis <- num_knots + spline_degree - 1
 B <- t(bs(1:max(data$id_date), df = num_basis, degree = spline_degree, intercept = TRUE))
@@ -187,7 +187,7 @@ load("model_aggregator.RData")
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:82) {
+for (i in 1:89) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
