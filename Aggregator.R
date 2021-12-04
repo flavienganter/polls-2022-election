@@ -59,23 +59,24 @@ logit <- function(x) log(x/(1-x))
 ## Prepare data
 data <- read_excel("PollsData.xlsx") %>% 
   
-  # Create hypothesis ID and identify the Les Républicains candidate in each hypothesis
-  mutate(id_hyp = 1:n(),
-         c_repub = ifelse(!is.na(c_bertrand), c_bertrand, ifelse(!is.na(c_pecresse), c_pecresse, c_barnier))) %>% 
+  # Create hypothesis ID
+  mutate(id_hyp = 1:n()) %>% 
   
   # Identify scenarios w/o EZ
   mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>%
     
   # Remove scenarios w/o EZ after September
   filter((isnot_zemmour == 1 & month == 9) |
-           isnot_zemmour == 0) %>% 
+           isnot_zemmour == 0) %>%
+    
+  # Remove scenarios w/o VP
+  filter(!is.na(c_pecresse)) %>% 
   
   # Wide to long
-  gather(candidate, share, c_poutou:c_lagarde, c_repub) %>% 
+  gather(candidate, share, c_poutou:c_lagarde) %>% 
   
   # Remove rows corresponding to untested candidates
-  filter(candidate %nin% c("c_bertrand", "c_pecresse", "c_barnier") &
-           !is.na(share)) %>% 
+  filter(!is.na(share)) %>% 
   
   # Recode truncated values and switch to share
     ## The uncertainty due to truncated values could be modeled directly,
@@ -128,48 +129,46 @@ save(data, file = "PollsData.RData")
 if (0) { # Model run in a separate cluster
 
 # Define splines 
-num_knots <- 6
+num_knots     <- 6
 spline_degree <- 3
-num_basis <- num_knots + spline_degree - 1
-B <- t(bs(1:max(data$id_date), df = num_basis, degree = spline_degree, intercept = TRUE))
+num_basis     <- num_knots + spline_degree - 1
+B             <- t(bs(1:max(data$id_date), df = num_basis, degree = spline_degree, intercept = TRUE))
 
 # Gather data to feed the model
-  ## prior_mu is the prior for each candidate score based on the latest poll in August
-data_spline_model <- list(N = nrow(data),
-                          tot_eff = data$n,
-                          vote_eff = data$eff,
-                          id_cand = data$id_candidate,
-                          C = length(unique(data$id_candidate)),
-                          id_date = data$id_date,
-                          id_month = data$id_month,
-                          M = length(unique(data$id_month)),
-                          id_poll = data$id,
-                          P = length(unique(data$id)),
-                          id_firm = data$id_firm,
-                          F = length(unique(data$id_firm)),
-                          X = data[, c("log_n", "unsure_1", "unsure_2")],
-                          isn_z = data$isnot_zemmour,
-                          num_knots = num_knots,
-                          knots = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
+data_spline_model <- list(N             = nrow(data),
+                          tot_eff       = data$n,
+                          vote_eff      = data$eff,
+                          id_cand       = data$id_candidate,
+                          C             = length(unique(data$id_candidate)),
+                          id_date       = data$id_date,
+                          id_month      = data$id_month,
+                          M             = length(unique(data$id_month)),
+                          id_poll       = data$id,
+                          id_firm       = data$id_firm,
+                          F             = length(unique(data$id_firm)),
+                          X             = data[, c("log_n", "unsure_1", "unsure_2")],
+                          isn_z         = data$isnot_zemmour,
+                          num_knots     = num_knots,
+                          knots         = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
                           spline_degree = spline_degree,
-                          num_basis = num_basis,
-                          D = ncol(B),
-                          B = as.matrix(B))
+                          num_basis     = num_basis,
+                          D             = ncol(B),
+                          B             = as.matrix(B))
   
 # Compile model
 model_code <- cmdstan_model("ModelSplines.stan")
 
 # Estimate model
-estimated_spline_model <- model_code$sample(data = data_spline_model,
-                                            seed = 94836,
-                                            chains = 4,
+estimated_spline_model <- model_code$sample(data            = data_spline_model,
+                                            seed            = 94836,
+                                            chains          = 4,
                                             parallel_chains = 4,
-                                            iter_warmup = 2000,
-                                            iter_sampling = 2000,
-                                            adapt_delta = .99,
-                                            max_treedepth = 15,
-                                            refresh = 1000,
-                                            save_warmup = FALSE)
+                                            iter_warmup     = 2000,
+                                            iter_sampling   = 2000,
+                                            adapt_delta     = .99,
+                                            max_treedepth   = 15,
+                                            refresh         = 1000,
+                                            save_warmup     = FALSE)
 
 # Get posterior draws
 spline_draws <- estimated_spline_model$draws(variables = "prob", format = "draws_df")
@@ -232,8 +231,8 @@ plot_spline_estimates <- plot_spline_estimates %>%
                                          candidate == 6 ~ "Emmanuel Macron",
                                          candidate == 7 ~ "Jean-Luc Mélenchon",
                                          candidate == 8 ~ "Arnaud Montebourg",
-                                         candidate == 9 ~ "Philippe Poutou",
-                                         candidate == 10 ~ "Candidat Les Républicains",
+                                         candidate == 9 ~ "Valérie Pécresse",
+                                         candidate == 10 ~ "Philippe Poutou",
                                          candidate == 11 ~ "Fabien Roussel",
                                          candidate == 12 ~ "Eric Zemmour")))
 
@@ -242,17 +241,19 @@ plot_spline_estimates <- plot_spline_estimates %>%
 
 # Define candidate colors
 candidate_colors <- c("#f7b4b4", "#af8080", "#0070c0", "#ff6600", "black", "#ff1300",
-                      "#b30d00", "#002060", "#c80589", "#7030a0", "#8fa02a", "#00b050")
+                      "#b30d00", "#002060", "#7030a0", "#c80589", "#8fa02a", "#00b050")
+candidate_colors <- c("#f7b4b4", "#af8080", "#ff6600", "black", "#ff1300", "#b30d00",
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
   
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
-         median_label = case_when(label == "Arnaud Montebourg" ~ median - .002,
-                                  label == "Fabien Roussel" ~ median + .002,
-                                  label == "Nicolas Dupont-Aignan" ~ median + .002,
-                                  label == "Philippe Poutou" ~ median + .001,
-                                  label == "Nathalie Arthaud" ~ median - .001,
-                                  label == "Jean-Luc Mélenchon" ~ median + .001,
+         median_label = case_when(label == "Arnaud Montebourg" ~ median + .002,
+                                  label == "Fabien Roussel" ~ median - .002,
+                                  label == "Nicolas Dupont-Aignan" ~ median,
+                                  label == "Philippe Poutou" ~ median,
+                                  label == "Nathalie Arthaud" ~ median,
+                                  label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median - .001,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
@@ -276,7 +277,7 @@ poll_plot <- plot_spline_estimates %>%
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa et OpinionWay depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le \nmodèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les intentions de vote en faveur du candidat des Républicains agrègent celles en faveur de Xavier Bertrand, Valérie Pécresse et Michel Barnier, en donnant un poids identique aux trois \ncandidats. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver \ndans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le \nmodèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver \ndans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
   
   # Specify plot theme
   theme_minimal() +
@@ -308,7 +309,7 @@ poll_plot <- plot_spline_estimates %>%
                limits = c(as.Date("2021-09-01"), as.Date("2022-04-10"))) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(.02, 0), breaks = seq(0, 30, 5), lim = c(0, 27.5))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(.02, 0), breaks = seq(0, 30, 5), lim = c(0, 28))
 
 
 ## Export plot

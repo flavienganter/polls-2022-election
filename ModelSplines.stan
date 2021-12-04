@@ -7,7 +7,6 @@ data {
   int id_cand[N];
   int C;
   int id_poll[N];
-  int P;
   int id_date[N];
   int id_month[N];
   int M;
@@ -37,7 +36,7 @@ parameters {
   real<lower=0> sigma_alpha0;
   
   // Covariates
-  matrix[P,C] mu;
+  matrix[12,C] mu;
   real tau_mu_tilde[C];
   matrix[F,C] lambda;
   real tau_lambda_tilde[C];
@@ -125,7 +124,6 @@ model {
     } else {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
-                                  tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
                                   X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +

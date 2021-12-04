@@ -4,7 +4,7 @@
 
 ## Data
 
-I use data from all voting intention polls fielded since September 1, 2021, based on the survey reports available on the [Commission des sondages website](https://www.commission-des-sondages.fr/notices/). Up to now, I have kept data from all scenarios testing one of the three main Les Républicains candidates—Xavier Bertrand, Valérie Pécresse, and Michel Barnier–and average them; I will adjust in early December, when we know who will eventually be the candidate for Les Républicains. I have also kept scenarios both including and excluding Éric Zemmour (see Model for more details).
+I use data from all voting intention polls fielded since September 1, 2021, based on the survey reports available on the [Commission des sondages website](https://www.commission-des-sondages.fr/notices/). The model is only estimated on scenarios including both Valérie Pécresse and Éric Zemmour, except for September, for which I have also kept scenarios excluding Éric Zemmour (see Model for more details).
 
 ## Model
 
@@ -39,6 +39,8 @@ In order to partially pool information among the various scenarios of the same p
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_mu.png?raw=true)
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_lambda.png?raw=true)
+
+For polls fielded after September 2021, I fix μ<sub>_cp[I]_</sub> = 0 as there is only one observation per poll.
 
 ### Zemmour Adjustment
 
