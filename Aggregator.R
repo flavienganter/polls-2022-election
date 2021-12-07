@@ -186,7 +186,7 @@ load("model_aggregator.RData")
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:89) {
+for (i in 1:96) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
@@ -240,21 +240,19 @@ plot_spline_estimates <- plot_spline_estimates %>%
 ## Create plot
 
 # Define candidate colors
-candidate_colors <- c("#f7b4b4", "#af8080", "#0070c0", "#ff6600", "black", "#ff1300",
-                      "#b30d00", "#002060", "#7030a0", "#c80589", "#8fa02a", "#00b050")
 candidate_colors <- c("#f7b4b4", "#af8080", "#ff6600", "black", "#ff1300", "#b30d00",
                       "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
   
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
-         median_label = case_when(label == "Arnaud Montebourg" ~ median + .002,
-                                  label == "Fabien Roussel" ~ median - .002,
+         median_label = case_when(label == "Arnaud Montebourg" ~ median + .0015,
+                                  label == "Fabien Roussel" ~ median + .001,
                                   label == "Nicolas Dupont-Aignan" ~ median,
                                   label == "Philippe Poutou" ~ median,
-                                  label == "Nathalie Arthaud" ~ median,
+                                  label == "Nathalie Arthaud" ~ median - .001,
                                   label == "Jean-Luc Mélenchon" ~ median,
-                                  label == "Yannick Jadot" ~ median - .001,
+                                  label == "Yannick Jadot" ~ median,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
