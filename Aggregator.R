@@ -97,7 +97,7 @@ data <- read_excel("PollsData.xlsx") %>%
     ## Estimates for these candidates are very noisy, and not
     ## necessarily relevant. Omitting then does not affect the
     ## estimation for other candidates
-  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_thouy")) %>% 
+  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_taubira", "c_thouy")) %>% 
   ungroup() %>% 
   
   # Switch from share for numbers, create a logged sample size variable,
@@ -186,7 +186,7 @@ load("model_aggregator.RData")
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:99) {
+for (i in 1:103) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
@@ -246,10 +246,10 @@ candidate_colors <- c("#f7b4b4", "#af8080", "#ff6600", "black", "#ff1300", "#b30
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
-         median_label = case_when(label == "Arnaud Montebourg" ~ median + .001,
+         median_label = case_when(label == "Arnaud Montebourg" ~ median - .002,
                                   label == "Fabien Roussel" ~ median - .001,
                                   label == "Nicolas Dupont-Aignan" ~ median + .001,
-                                  label == "Philippe Poutou" ~ median - .002,
+                                  label == "Philippe Poutou" ~ median + .001,
                                   label == "Nathalie Arthaud" ~ median - .001,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
