@@ -248,7 +248,7 @@ poll_plot <- plot_spline_estimates %>%
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
          median_label = case_when(label == "Arnaud Montebourg" ~ median + .001,
                                   label == "Fabien Roussel" ~ median + .001,
-                                  label == "Nicolas Dupont-Aignan" ~ median - .002,
+                                  label == "Nicolas Dupont-Aignan" ~ median - .001,
                                   label == "Philippe Poutou" ~ median - .002,
                                   label == "Nathalie Arthaud" ~ median - .001,
                                   label == "Jean-Luc Mélenchon" ~ median,
@@ -275,7 +275,7 @@ poll_plot <- plot_spline_estimates %>%
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le \nmodèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver \ndans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie \nla plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
   
   # Specify plot theme
   theme_minimal() +
