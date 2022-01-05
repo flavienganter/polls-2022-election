@@ -112,7 +112,7 @@ model {
   
   // Likelihood
   for (i in 1:N) {
-    if (id_month[i] == 1) {
+    if (id_month[i] == 2) {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
