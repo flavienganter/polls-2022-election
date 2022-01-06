@@ -69,6 +69,9 @@ data <- read_excel("PollsData.xlsx") %>%
   filter((isnot_zemmour == 1 & month == 9) |
            isnot_zemmour == 0) %>%
     
+  # Remove scenarios w/ Taubira or union of the Left (for now)
+  filter(is.na(omit)) %>% 
+    
   # Remove scenarios w/o VP
   filter(!is.na(c_pecresse)) %>% 
   
@@ -248,8 +251,8 @@ poll_plot <- plot_spline_estimates %>%
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
          median_label = case_when(label == "Arnaud Montebourg" ~ median + .002,
                                   label == "Fabien Roussel" ~ median + .00,
-                                  label == "Nicolas Dupont-Aignan" ~ median - .00,
-                                  label == "Philippe Poutou" ~ median - .001,
+                                  label == "Nicolas Dupont-Aignan" ~ median - .001,
+                                  label == "Philippe Poutou" ~ median - .002,
                                   label == "Nathalie Arthaud" ~ median - .002,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
