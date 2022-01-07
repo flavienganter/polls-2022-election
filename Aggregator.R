@@ -2,7 +2,7 @@
 # Flavien Ganter
 
 # Created on October 4, 2021
-# Last modified on November 10, 2021
+# Last modified on January 7, 2022
 
 
 
@@ -189,7 +189,7 @@ load("model_aggregator.RData")
 # Prepare draws
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:127) {
+for (i in 1:aggregator_model@par_dims[["prob"]][1]) {
   for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
@@ -250,7 +250,7 @@ candidate_colors <- c("#f7b4b4", "#af8080", "#ff6600", "black", "#ff1300", "#b30
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
          median_label = case_when(label == "Arnaud Montebourg" ~ median + .002,
-                                  label == "Fabien Roussel" ~ median + .00,
+                                  label == "Fabien Roussel" ~ median + .001,
                                   label == "Nicolas Dupont-Aignan" ~ median - .001,
                                   label == "Philippe Poutou" ~ median - .002,
                                   label == "Nathalie Arthaud" ~ median - .002,
