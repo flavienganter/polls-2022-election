@@ -256,6 +256,8 @@ poll_plot <- plot_spline_estimates %>%
                                   label == "Nathalie Arthaud" ~ median - .002,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
+                                  label == "Marine Le Pen" ~ median + .001,
+                                  label == "Valérie Pécresse" ~ median - .001,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
