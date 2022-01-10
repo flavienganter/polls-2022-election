@@ -44,7 +44,7 @@ parameters {
   matrix[3,C] tau_nu_tilde;
   real<lower=0> sigma_mu;
   real<lower=0> sigma_lambda;
-  real<lower=0> sigma_beta[3];
+  real<lower=0> sigma_beta[4];
   real<lower=0> sigma_nu[3];
   
   // EZ adjustment
