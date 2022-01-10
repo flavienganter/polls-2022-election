@@ -110,7 +110,8 @@ data <- read_excel("PollsData.xlsx") %>%
   mutate(eff = round(n * share),
          log_n = log(n) - mean(log(n)),
          unsure_1 = scale_factor(variable = unsure)[[1]],
-         unsure_2 = scale_factor(variable = unsure)[[2]]) %>% 
+         unsure_2 = scale_factor(variable = unsure)[[2]],
+         rolling_yes = scale_factor(variable = rolling)) %>% 
   
   # Create a candidate ID
   group_by(candidate) %>%
@@ -124,6 +125,8 @@ data <- read_excel("PollsData.xlsx") %>%
          id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870) %>% 
   group_by(month) %>% 
   mutate(id_month = cur_group_id())
+  
+# Export
 save(data, file = "PollsData.RData")
 
 
@@ -149,7 +152,7 @@ data_spline_model <- list(N             = nrow(data),
                           id_poll       = data$id,
                           id_firm       = data$id_firm,
                           F             = length(unique(data$id_firm)),
-                          X             = data[, c("log_n", "unsure_1", "unsure_2")],
+                          X             = data[, c("log_n", "unsure_1", "unsure_2", "rolling_yes")],
                           isn_z         = data$isnot_zemmour,
                           num_knots     = num_knots,
                           knots         = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
