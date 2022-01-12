@@ -252,10 +252,10 @@ candidate_colors <- c("#f7b4b4", "#af8080", "#ff6600", "black", "#ff1300", "#b30
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
-         median_label = case_when(label == "Arnaud Montebourg" ~ median - .001,
+         median_label = case_when(label == "Arnaud Montebourg" ~ median + .001,
                                   label == "Fabien Roussel" ~ median + .001,
                                   label == "Nicolas Dupont-Aignan" ~ median - .001,
-                                  label == "Philippe Poutou" ~ median + .001,
+                                  label == "Philippe Poutou" ~ median + .00,
                                   label == "Nathalie Arthaud" ~ median - .002,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
