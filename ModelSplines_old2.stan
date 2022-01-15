@@ -7,7 +7,6 @@ data {
   int id_cand[N];
   int C;
   int id_poll[N];
-  int P;
   int id_date[N];
   int id_month[N];
   int M;
@@ -15,9 +14,8 @@ data {
   int F;
   matrix[N,4] X;
   
-  // EZ and CT adjustement
+  // EZ adjustement
   int isn_z[N];
-  int isn_t[N];
   
   // Splines
   int num_knots;
@@ -38,7 +36,7 @@ parameters {
   real<lower=0> sigma_alpha0;
   
   // Covariates
-  matrix[P,C] mu;
+  matrix[12,C] mu;
   real tau_mu_tilde[C];
   matrix[F,C] lambda;
   real tau_lambda_tilde[C];
@@ -49,11 +47,9 @@ parameters {
   real<lower=0> sigma_beta[4];
   real<lower=0> sigma_nu[3];
   
-  // EZ and CT adjustment
-  real gamma_z_tilde[C-2];
-  real gamma_t_tilde[C-1];
-  real tau_gamma_z;
-  real tau_gamma_t;
+  // EZ adjustment
+  real gamma_tilde[C-1];
+  real tau_gamma;
   
 }
 transformed parameters {
@@ -63,8 +59,7 @@ transformed parameters {
   real<lower=0> tau_lambda[C];
   matrix[4,C] beta;
   matrix[3,C] nu;
-  real gamma_z[C];
-  real gamma_t[C];
+  real gamma[C];
   
   // Spline coefficients, specified as a random walk
   // to avoid overfit
@@ -83,14 +78,9 @@ transformed parameters {
     for (x in 1:3)
       nu[x,c] = sigma_nu[x] * tau_nu_tilde[x,c];
     if (c < 12) {
-      gamma_z[c] = tau_gamma_z * gamma_z_tilde[c];
-      gamma_t[c] = tau_gamma_t * gamma_t_tilde[c];
-    } else if (c == 12) {
-      gamma_z[c] = 0;
-      gamma_t[c] = tau_gamma_t * gamma_t_tilde[c];
+      gamma[c] = tau_gamma * gamma_tilde[c];
     } else {
-      gamma_z[c] = 0;
-      gamma_t[c] = 0;
+      gamma[c] = 0;
     }
   }
   
@@ -108,10 +98,8 @@ model {
     tau_nu_tilde[x,] ~ normal(0, 1);
   tau_mu_tilde ~ normal(0, 1);
   tau_lambda_tilde ~ normal(0, 1);
-  tau_gamma_z ~ normal(0, 1);
-  tau_gamma_t ~ normal(0, 1);
-  gamma_z_tilde ~ normal(0, 1);
-  gamma_t_tilde ~ normal(0, 1);
+  tau_gamma ~ normal(0, 1);
+  gamma_tilde ~ normal(0, 1);
   sigma_mu ~ student_t(3, 0, 1);
   sigma_lambda ~ student_t(3, 0, 1);
   sigma_beta ~ student_t(3, 0, 1);
@@ -124,7 +112,7 @@ model {
   
   // Likelihood
   for (i in 1:N) {
-    if (id_month[i] == 1) {
+    if (id_month[i] == 2) {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
@@ -133,8 +121,8 @@ model {
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,4] * beta[4,id_cand[i]] +
-                                  gamma_z[id_cand[i]] * isn_z[i]); // EZ omission adjustment
-    } else if (id_month[i] < 4) {
+                                  gamma[id_cand[i]] * isn_z[i]); // EZ omission adjustment
+    } else {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
@@ -142,16 +130,6 @@ model {
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,4] * beta[4,id_cand[i]]);
-    } else {
-      target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
-                                  alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
-                                  tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
-                                  tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
-                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
-                                  X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,4] * beta[4,id_cand[i]] +
-                                  gamma_t[id_cand[i]] * isn_t[i]); // CT omission adjustment
     }
   }
                                        

@@ -62,14 +62,15 @@ data <- read_excel("PollsData.xlsx") %>%
   # Create hypothesis ID
   mutate(id_hyp = 1:n()) %>% 
   
-  # Identify scenarios w/o EZ
-  mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0)) %>%
+  # Identify scenarios w/o EZ and those w/o CT
+  mutate(isnot_zemmour = ifelse(is.na(c_zemmour), 1, 0),
+         isnot_taubira = ifelse(is.na(c_taubira), 1, 0)) %>%
     
   # Remove scenarios w/o EZ after September
   filter((isnot_zemmour == 1 & month == 9) |
            isnot_zemmour == 0) %>%
     
-  # Remove scenarios w/ Taubira or union of the Left (for now)
+  # Remove weird scenarios re: Taubira
   filter(is.na(omit)) %>% 
     
   # Remove scenarios w/o VP
@@ -100,7 +101,7 @@ data <- read_excel("PollsData.xlsx") %>%
     ## Estimates for these candidates are very noisy, and not
     ## necessarily relevant. Omitting then does not affect the
     ## estimation for other candidates
-  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_taubira", "c_thouy")) %>% 
+  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_thouy")) %>% 
   ungroup() %>% 
   
   # Switch from share for numbers, create a logged sample size variable,
@@ -114,17 +115,28 @@ data <- read_excel("PollsData.xlsx") %>%
          rolling_yes = scale_factor(variable = rolling)) %>% 
   
   # Create a candidate ID
-  group_by(candidate) %>%
-  mutate(id_candidate = cur_group_id()) %>% 
+  mutate(id_candidate = case_when(candidate == "c_arthaud" ~ 1,
+                                  candidate == "c_daignant" ~ 2,
+                                  candidate == "c_hidalgo" ~ 3,
+                                  candidate == "c_jadot" ~ 4,
+                                  candidate == "c_lepen" ~ 5,
+                                  candidate == "c_macron" ~ 6,
+                                  candidate == "c_melenchon" ~ 7,
+                                  candidate == "c_montebourg" ~ 8,
+                                  candidate == "c_pecresse" ~ 9,
+                                  candidate == "c_poutou" ~ 10,
+                                  candidate == "c_roussel" ~ 11,
+                                  candidate == "c_zemmour" ~ 12,
+                                  candidate == "c_taubira" ~ 13)) %>% 
   
   # Create a firm ID and recode poll dates
     ## Poll dates are the median dates of data collection, or the first day after
     ## the median, if the median is not properly defined.
   group_by(firm) %>% 
   mutate(id_firm = cur_group_id(),
-         id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870) %>% 
-  group_by(month) %>% 
-  mutate(id_month = cur_group_id())
+         id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870,
+         id_month = case_when(month > 8 ~ month-8,
+                              TRUE ~ month+4))
   
 # Export
 save(data, file = "PollsData.RData")
@@ -150,10 +162,12 @@ data_spline_model <- list(N             = nrow(data),
                           id_month      = data$id_month,
                           M             = length(unique(data$id_month)),
                           id_poll       = data$id,
+                          P             = length(unique(data$id)),
                           id_firm       = data$id_firm,
                           F             = length(unique(data$id_firm)),
                           X             = data[, c("log_n", "unsure_1", "unsure_2", "rolling_yes")],
                           isn_z         = data$isnot_zemmour,
+                          isn_t         = data$isnot_taubira,
                           num_knots     = num_knots,
                           knots         = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
                           spline_degree = spline_degree,
@@ -193,7 +207,7 @@ load("model_aggregator.RData")
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
 for (i in 1:aggregator_model@par_dims[["prob"]][1]) {
-  for (j in 1:12) {
+  for (j in 1:13) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
                             `prob[i,j]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
@@ -240,27 +254,29 @@ plot_spline_estimates <- plot_spline_estimates %>%
                                          candidate == 9 ~ "Valérie Pécresse",
                                          candidate == 10 ~ "Philippe Poutou",
                                          candidate == 11 ~ "Fabien Roussel",
-                                         candidate == 12 ~ "Eric Zemmour")))
+                                         candidate == 12 ~ "Eric Zemmour",
+                                         candidate == 13 ~ "Christiane Taubira"))) %>% 
+  filter(candidate != "Christiane Taubira" | (candidate == "Christiane Taubira" & date >= "2021-12-15"))
 
 
 ## Create plot
 
 # Define candidate colors
-candidate_colors <- c("#f7b4b4", "#af8080", "#ff6600", "black", "#ff1300", "#b30d00",
+candidate_colors <- c("#f7b4b4", "#af8080", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
                       "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
   
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
-         median_label = case_when(label == "Arnaud Montebourg" ~ median - .001,
-                                  label == "Fabien Roussel" ~ median - .002,
-                                  label == "Nicolas Dupont-Aignan" ~ median + .002,
+         median_label = case_when(label == "Arnaud Montebourg" ~ median - .00,
+                                  label == "Fabien Roussel" ~ median + .002,
+                                  label == "Nicolas Dupont-Aignan" ~ median - .002,
                                   label == "Philippe Poutou" ~ median + .00,
                                   label == "Nathalie Arthaud" ~ median - .002,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
-                                  label == "Marine Le Pen" ~ median + .001,
-                                  label == "Valérie Pécresse" ~ median - .001,
+                                  label == "Marine Le Pen" ~ median + .00,
+                                  label == "Valérie Pécresse" ~ median - .00,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
@@ -283,7 +299,7 @@ poll_plot <- plot_spline_estimates %>%
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre. Les lignes relient les médianes des distributions a posteriori, et les zones colorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie \nla plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. Dernière mise à jour: ", Sys.Date(), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre, et que celle de Taubira n'a été testée qu'à partir de mi-décembre et seulement par certaines enquêtes. Les lignes relient les médianes des distributions a posteriori, et les zones \ncolorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. \nDernière mise à jour: ", Sys.Date(), ".")) +
   
   # Specify plot theme
   theme_minimal() +
