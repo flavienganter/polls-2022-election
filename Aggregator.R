@@ -101,7 +101,8 @@ data <- read_excel("PollsData.xlsx") %>%
     ## Estimates for these candidates are very noisy, and not
     ## necessarily relevant. Omitting then does not affect the
     ## estimation for other candidates
-  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_philippot", "c_thouy")) %>% 
+  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_montebourg",
+                           "c_philippot", "c_thouy")) %>% 
   ungroup() %>% 
   
   # Switch from share for numbers, create a logged sample size variable,
@@ -122,12 +123,11 @@ data <- read_excel("PollsData.xlsx") %>%
                                   candidate == "c_lepen" ~ 5,
                                   candidate == "c_macron" ~ 6,
                                   candidate == "c_melenchon" ~ 7,
-                                  candidate == "c_montebourg" ~ 8,
-                                  candidate == "c_pecresse" ~ 9,
-                                  candidate == "c_poutou" ~ 10,
-                                  candidate == "c_roussel" ~ 11,
-                                  candidate == "c_zemmour" ~ 12,
-                                  candidate == "c_taubira" ~ 13)) %>% 
+                                  candidate == "c_pecresse" ~ 8,
+                                  candidate == "c_poutou" ~ 9,
+                                  candidate == "c_roussel" ~ 10,
+                                  candidate == "c_zemmour" ~ 11,
+                                  candidate == "c_taubira" ~ 12)) %>% 
   
   # Create a firm ID and recode poll dates
     ## Poll dates are the median dates of data collection, or the first day after
@@ -250,7 +250,6 @@ plot_spline_estimates <- plot_spline_estimates %>%
                                          candidate == 5 ~ "Marine Le Pen",
                                          candidate == 6 ~ "Emmanuel Macron",
                                          candidate == 7 ~ "Jean-Luc Mélenchon",
-                                         candidate == 8 ~ "Arnaud Montebourg",
                                          candidate == 9 ~ "Valérie Pécresse",
                                          candidate == 10 ~ "Philippe Poutou",
                                          candidate == 11 ~ "Fabien Roussel",
@@ -262,17 +261,17 @@ plot_spline_estimates <- plot_spline_estimates %>%
 ## Create plot
 
 # Define candidate colors
-candidate_colors <- c("#f7b4b4", "#af8080", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
+candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
                       "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
   
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
          median_label = case_when(label == "Arnaud Montebourg" ~ median - .00,
-                                  label == "Fabien Roussel" ~ median + .002,
-                                  label == "Nicolas Dupont-Aignan" ~ median - .002,
+                                  label == "Fabien Roussel" ~ median + .00,
+                                  label == "Nicolas Dupont-Aignan" ~ median - .00,
                                   label == "Philippe Poutou" ~ median + .00,
-                                  label == "Nathalie Arthaud" ~ median - .002,
+                                  label == "Nathalie Arthaud" ~ median - .00,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
                                   label == "Marine Le Pen" ~ median + .00,
