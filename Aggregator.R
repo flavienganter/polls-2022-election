@@ -207,7 +207,7 @@ load("model_aggregator.RData")
 spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
 colnames(spline_draws) <- "prob[1,1]"
 for (i in 1:aggregator_model@par_dims[["prob"]][1]) {
-  for (j in 1:13) {
+  for (j in 1:12) {
     if (!(i == 1 & j == 1)) {
       spline_draws <- cbind(spline_draws,
                             `prob[i,j]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
@@ -250,11 +250,11 @@ plot_spline_estimates <- plot_spline_estimates %>%
                                          candidate == 5 ~ "Marine Le Pen",
                                          candidate == 6 ~ "Emmanuel Macron",
                                          candidate == 7 ~ "Jean-Luc Mélenchon",
-                                         candidate == 9 ~ "Valérie Pécresse",
-                                         candidate == 10 ~ "Philippe Poutou",
-                                         candidate == 11 ~ "Fabien Roussel",
-                                         candidate == 12 ~ "Eric Zemmour",
-                                         candidate == 13 ~ "Christiane Taubira"))) %>% 
+                                         candidate == 8 ~ "Valérie Pécresse",
+                                         candidate == 9 ~ "Philippe Poutou",
+                                         candidate == 10 ~ "Fabien Roussel",
+                                         candidate == 11 ~ "Eric Zemmour",
+                                         candidate == 12 ~ "Christiane Taubira"))) %>% 
   filter(candidate != "Christiane Taubira" | (candidate == "Christiane Taubira" & date >= "2021-12-15"))
 
 

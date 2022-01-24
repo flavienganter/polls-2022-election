@@ -82,10 +82,10 @@ transformed parameters {
       beta[x,c] = sigma_beta[x] * tau_beta_tilde[x,c];
     for (x in 1:3)
       nu[x,c] = sigma_nu[x] * tau_nu_tilde[x,c];
-    if (c < 12) {
+    if (c < 11) {
       gamma_z[c] = tau_gamma_z * gamma_z_tilde[c];
       gamma_t[c] = tau_gamma_t * gamma_t_tilde[c];
-    } else if (c == 12) {
+    } else if (c == 11) {
       gamma_z[c] = 0;
       gamma_t[c] = tau_gamma_t * gamma_t_tilde[c];
     } else {
