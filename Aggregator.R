@@ -268,14 +268,14 @@ candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
          median_label = case_when(label == "Arnaud Montebourg" ~ median - .00,
-                                  label == "Fabien Roussel" ~ median + .00,
+                                  label == "Fabien Roussel" ~ median - .001,
                                   label == "Nicolas Dupont-Aignan" ~ median + .001,
                                   label == "Philippe Poutou" ~ median - .001,
                                   label == "Nathalie Arthaud" ~ median - .00,
                                   label == "Jean-Luc Mélenchon" ~ median,
                                   label == "Yannick Jadot" ~ median,
-                                  label == "Marine Le Pen" ~ median + .00,
-                                  label == "Valérie Pécresse" ~ median - .00,
+                                  label == "Marine Le Pen" ~ median + .001,
+                                  label == "Valérie Pécresse" ~ median - .002,
                                   !is.na(label) ~ median)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
