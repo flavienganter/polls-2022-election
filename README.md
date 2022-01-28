@@ -50,7 +50,7 @@ In the same vein, polls before December 15 did not test Christiane Taubira as ca
 
 ### Other Covariates
 
-The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, two (standardized) dummies that adjust for the subsample of respondents that the polling organization calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and one additional (standardized) dummy that adjusts for whether the poll is a rolling. To allow the effect of these covariates to vary as the election date gets closer, these coefficients incorporate a time trend:
+The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, two (standardized) dummies that adjust for the subsample of respondents that the polling organization calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and one additional (standardized) dummy that adjusts for whether the poll is a rolling poll. To allow the effect of these covariates to vary as the election date gets closer, these coefficients incorporate a time trend:
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta.png?raw=true)
 
