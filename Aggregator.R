@@ -280,8 +280,8 @@ library(zoo)
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), paste0(as.character(candidate), " (", unlist(lapply(median*100, round2)), "%)"), NA_character_),
-         median_label = case_when(candidate == "Anne Hidalgo" ~ median + .0015,
-                                  candidate == "Fabien Roussel" ~ median - .0015,
+         median_label = case_when(candidate == "Anne Hidalgo" ~ median + .002,
+                                  candidate == "Fabien Roussel" ~ median - .002,
                                   candidate == "Nicolas Dupont-Aignan" ~ median + .00,
                                   candidate == "Philippe Poutou" ~ median - .00,
                                   candidate == "Nathalie Arthaud" ~ median - .00,
