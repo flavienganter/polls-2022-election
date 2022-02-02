@@ -18,6 +18,7 @@ rm(list = ls())
 # Set working directory
 setwd("~/Dropbox/PollsFrance2022/")
 options(mc.cores = parallel::detectCores())
+Sys.setlocale("LC_TIME", "fr_FR.UTF-8")
 
 # Packages
 library(tidyverse)
@@ -26,11 +27,20 @@ library(cmdstanr)
 library(readxl)
 library(HDInterval)
 library(splines)
+library(zoo)
 extrafont::loadfonts()
 
 # Commands & Functions
 "%nin%" <- Negate("%in%")
 logit <- function(x) log(x/(1-x))
+round2 <- function(x) {
+  diff <- c(abs(x-trunc(x)), abs(x-trunc(x)-.5), abs(x-trunc(x)-1))
+  if (length(which(min(diff) == diff)) == 1) {
+    c(trunc(x), trunc(x)+.5, trunc(x)+1)[which(min(diff) == diff)]
+  } else {
+    c(trunc(x), trunc(x)+.5, trunc(x)+1)[which(min(diff) == diff)[2]]
+  }
+}
   
   # Function to center and standardize continuous and categorical variables
   # (helpful for Bayesian prior, see Gelman et al. 2008)
@@ -147,7 +157,7 @@ save(data, file = "PollsData.RData")
 if (0) { # Model run in a separate cluster
 
 # Define splines 
-num_knots     <- 7
+num_knots     <- 8
 spline_degree <- 3
 num_basis     <- num_knots + spline_degree - 1
 B             <- t(bs(1:max(data$id_date), df = num_basis, degree = spline_degree, intercept = TRUE))
@@ -264,9 +274,12 @@ plot_spline_estimates <- plot_spline_estimates %>%
 candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
                       "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
   
+
+library(zoo)
+
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
-  mutate(label = if_else(date == max(date), as.character(candidate), NA_character_),
+  mutate(label = if_else(date == max(date), paste0(as.character(candidate), " (", unlist(lapply(median*100, round2)), "%)"), NA_character_),
          median_label = case_when(label == "Anne Hidalgo" ~ median + .001,
                                   label == "Fabien Roussel" ~ median - .001,
                                   label == "Nicolas Dupont-Aignan" ~ median + .00,
@@ -277,28 +290,54 @@ poll_plot <- plot_spline_estimates %>%
                                   label == "Marine Le Pen" ~ median + .00,
                                   label == "Valérie Pécresse" ~ median - .00,
                                   !is.na(label) ~ median)) %>% 
+  group_by(candidate) %>% 
+  mutate(lower50_l = zoo::rollmean(lower50, k = 2, align = "left", fill = NA),
+         lower50_r = zoo::rollmean(lower50, k = 2, align = "right", fill = NA),
+         upper50_l = zoo::rollmean(upper50, k = 2, align = "left", fill = NA),
+         upper50_r = zoo::rollmean(upper50, k = 2, align = "right", fill = NA),
+         lower95_l = zoo::rollmean(lower95, k = 2, align = "left", fill = NA),
+         lower95_r = zoo::rollmean(lower95, k = 2, align = "right", fill = NA),
+         upper95_l = zoo::rollmean(upper95, k = 2, align = "left", fill = NA),
+         upper95_r = zoo::rollmean(upper95, k = 2, align = "right", fill = NA),
+         lower50_s = zoo::rollmean(lower50, k = 3, fill = NA),
+         upper50_s = zoo::rollmean(upper50, k = 3, fill = NA),
+         lower95_s = zoo::rollmean(lower95, k = 3, fill = NA),
+         upper95_s = zoo::rollmean(upper95, k = 3, fill = NA),
+         lower50_s = ifelse(is.na(lower50_s), lower50_l, lower50_s),
+         lower50_s = ifelse(is.na(lower50_s), lower50_r, lower50_s),
+         upper50_s = ifelse(is.na(upper50_s), upper50_l, upper50_s),
+         upper50_s = ifelse(is.na(upper50_s), upper50_r, upper50_s),
+         lower95_s = ifelse(is.na(lower95_s), lower95_l, lower95_s),
+         lower95_s = ifelse(is.na(lower95_s), lower95_r, lower95_s),
+         upper95_s = ifelse(is.na(upper95_s), upper95_l, upper95_s),
+         upper95_s = ifelse(is.na(upper95_s), upper95_r, upper95_s)) %>% 
   ggplot(aes(x = date, group = candidate, color = candidate)) +
   
   # Plot data
   geom_line(aes(y = median * 100)) +
-  geom_ribbon(aes(ymin = lower50 * 100, ymax = upper50 * 100, fill = candidate), alpha = .1, size = 0) +
-  geom_ribbon(aes(ymin = lower95 * 100, ymax = upper95 * 100, fill = candidate), alpha = .1, size = 0) +
+  geom_ribbon(aes(ymin = lower50_s * 100, ymax = upper50_s * 100, fill = candidate), alpha = .1, size = 0) +
+  geom_ribbon(aes(ymin = lower95_s * 100, ymax = upper95_s * 100, fill = candidate), alpha = .1, size = 0) +
   
   # Candidate labels
   geom_text(aes(x = date + 1, y = median_label * 100, label = label), na.rm = TRUE,
             hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed") +
   
+  # Show latest poll's date
+  annotate("segment", x = max(plot_spline_estimates$date), y = 0, xend = max(plot_spline_estimates$date), yend = 28,
+           size = .5) +
+  annotate(geom = "text", x = max(plot_spline_estimates$date), y = 28.5, family = "Open Sans Condensed",
+           label = format(max(plot_spline_estimates$date), "%d %B %Y")) +
+  
   # Show 1st round
-  geom_vline(xintercept = as.Date("2022-04-10"), color = "gray", size = 2) +
-  annotate(geom = "text", x = as.Date("2022-03-04"), y = 24, family = "Open Sans Condensed",
-           label = "10 avril 2022 – Premier tour de l'élection présidentielle") +
-  annotate("segment", x = as.Date("2022-03-29"), y = 23.9, xend = as.Date("2022-04-09"), yend = 23,
-           size = .4, arrow = arrow(angle = 30, length = unit(2.5, "mm"))) +
+  annotate("segment", x = as.Date("2022-04-10"), y = 0, xend = as.Date("2022-04-10"), yend = 27,
+           size = .5) +
+  annotate(geom = "text", x = as.Date("2022-04-10"), y = 28, family = "Open Sans Condensed",
+           label = "Premier tour \n10 avril 2022") +
   
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre, et que celle de Taubira n'a été testée qu'à partir de mi-décembre et seulement par certaines enquêtes. Les lignes relient les médianes des distributions a posteriori, et les zones \ncolorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. \nDernière mise à jour: ", Sys.Date(), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre, et que celle de Taubira n'a été testée qu'à partir de mi-décembre et seulement par certaines enquêtes. Les lignes relient les médianes des distributions a posteriori, et les zones \ncolorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. \nDernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
   
   # Specify plot theme
   theme_minimal() +
@@ -327,10 +366,10 @@ poll_plot <- plot_spline_estimates %>%
   # Date axis
   scale_x_date(expand = c(.005,1), date_breaks = "1 month",
                date_labels = c("Avril", "Septembre", "Octobre", "Novembre", "Décembre", "Janvier", "Février", "Mars"),
-               limits = c(as.Date("2021-09-01"), as.Date("2022-04-10"))) +
+               limits = c(as.Date("2021-09-01"), as.Date("2022-04-15"))) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(.02, 0), breaks = seq(0, 30, 5), lim = c(0, 28))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 29))
 
 
 ## Export plot
