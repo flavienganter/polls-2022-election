@@ -280,16 +280,16 @@ library(zoo)
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), paste0(as.character(candidate), " (", unlist(lapply(median*100, round2)), "%)"), NA_character_),
-         median_label = case_when(label == "Anne Hidalgo" ~ median + .001,
-                                  label == "Fabien Roussel" ~ median - .001,
-                                  label == "Nicolas Dupont-Aignan" ~ median + .00,
-                                  label == "Philippe Poutou" ~ median - .00,
-                                  label == "Nathalie Arthaud" ~ median - .00,
-                                  label == "Jean-Luc Mélenchon" ~ median,
-                                  label == "Yannick Jadot" ~ median,
-                                  label == "Marine Le Pen" ~ median + .00,
-                                  label == "Valérie Pécresse" ~ median - .00,
-                                  !is.na(label) ~ median)) %>% 
+         median_label = case_when(candidate == "Anne Hidalgo" ~ median + .0015,
+                                  candidate == "Fabien Roussel" ~ median - .0015,
+                                  candidate == "Nicolas Dupont-Aignan" ~ median + .00,
+                                  candidate == "Philippe Poutou" ~ median - .00,
+                                  candidate == "Nathalie Arthaud" ~ median - .00,
+                                  candidate == "Jean-Luc Mélenchon" ~ median,
+                                  candidate == "Yannick Jadot" ~ median,
+                                  candidate == "Marine Le Pen" ~ median + .00,
+                                  candidate == "Valérie Pécresse" ~ median - .00,
+                                  !is.na(candidate) ~ median)) %>% 
   group_by(candidate) %>% 
   mutate(lower50_l = zoo::rollmean(lower50, k = 2, align = "left", fill = NA),
          lower50_r = zoo::rollmean(lower50, k = 2, align = "right", fill = NA),
