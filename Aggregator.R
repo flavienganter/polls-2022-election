@@ -273,18 +273,15 @@ plot_spline_estimates <- plot_spline_estimates %>%
 # Define candidate colors
 candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
                       "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
-  
-
-library(zoo)
 
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), paste0(as.character(candidate), " (", unlist(lapply(median*100, round2)), "%)"), NA_character_),
-         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .0015,
-                                  candidate == "Fabien Roussel" ~ median + .0015,
-                                  candidate == "Nicolas Dupont-Aignan" ~ median + .00,
+         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .002,
+                                  candidate == "Fabien Roussel" ~ median + .0025,
+                                  candidate == "Nicolas Dupont-Aignan" ~ median - .0025,
                                   candidate == "Philippe Poutou" ~ median - .00,
-                                  candidate == "Nathalie Arthaud" ~ median - .00,
+                                  candidate == "Nathalie Arthaud" ~ median - .001,
                                   candidate == "Jean-Luc Mélenchon" ~ median,
                                   candidate == "Yannick Jadot" ~ median,
                                   candidate == "Marine Le Pen" ~ median + .00,
@@ -320,19 +317,19 @@ poll_plot <- plot_spline_estimates %>%
   
   # Candidate labels
   geom_text(aes(x = date + 1, y = median_label * 100, label = label), na.rm = TRUE,
-            hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed") +
+            hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed", size = 3) +
   
   # Show latest poll's date
   annotate("segment", x = max(plot_spline_estimates$date), y = 0, xend = max(plot_spline_estimates$date), yend = 28,
-           size = .5) +
+           size = .4) +
   annotate(geom = "text", x = max(plot_spline_estimates$date), y = 28.5, family = "Open Sans Condensed",
-           label = format(max(plot_spline_estimates$date), "%d %B %Y")) +
+           label = format(max(plot_spline_estimates$date), "%d %B %Y"), size = 3) +
   
   # Show 1st round
   annotate("segment", x = as.Date("2022-04-10"), y = 0, xend = as.Date("2022-04-10"), yend = 27,
-           size = .5) +
+           size = .4) +
   annotate(geom = "text", x = as.Date("2022-04-10"), y = 28, family = "Open Sans Condensed",
-           label = "Premier tour \n10 avril 2022") +
+           label = "Premier tour \n10 avril 2022", size = 3) +
   
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
@@ -343,16 +340,16 @@ poll_plot <- plot_spline_estimates %>%
   theme_minimal() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
-        panel.grid.major.y = element_line(color = "#2b2b2b", linetype = "dotted", size = 0.15),
-        text = element_text(family = "Open Sans Condensed"),
-        axis.text = element_text(size = 10),
+        panel.grid.major.y = element_line(color = "#858585", linetype = "dotted", size = 0.05),
+        text = element_text(family = "Open Sans Condensed", size = 7.5),
+        axis.text = element_text(size = 8),
         axis.text.x = element_text(hjust = 0),
         axis.text.y = element_text(margin = margin(r = -2)),
         axis.title = element_blank(),
         axis.line.x = element_line(color = "#2b2b2b", size = 0.15),
         axis.ticks.x = element_line(color = "#2b2b2b", size = 0.15),
         axis.ticks.length = unit(.2, "cm"),
-        plot.title = element_text(size = 25, family = "Open Sans Condensed ExtraBold", face = "bold"),
+        plot.title = element_text(size = 20, family = "Open Sans Condensed ExtraBold", face = "bold"),
         plot.title.position = "plot",
         legend.position = "none",
         plot.caption = element_text(color = "gray30", hjust = 0, margin = margin(t = 15)),
@@ -373,6 +370,8 @@ poll_plot <- plot_spline_estimates %>%
 
 
 ## Export plot
+ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
+       height = 6, width = 10, device = cairo_pdf)
 ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
        height = 10, width = 14, device = cairo_pdf)
 
