@@ -161,8 +161,22 @@ generated quantities {
   // Estimate each candidate's score for every day between Sep 1
   // and the date of the most recent poll
   matrix<lower=0,upper=1>[D,C] prob;
-  for (d in 1:D)
-    for (c in 1:C)
-      prob[d,c] = inv_logit(alpha0[c] * d + to_row_vector(alpha[,c]) * B[,d] + beta[3,c] + nu[3,c] * (d - 1));
+  matrix<lower=0,upper=1>[F,C] prob_inst;
+  real<lower=0,upper=1> prob_incl[C];
+  real<lower=0,upper=1> prob_excl[C];
+  real<lower=0,upper=1> prob_partial[C];
+  for (c in 1:C) {
+    prob_incl[c] = inv_logit(alpha0[c] * D + to_row_vector(alpha[,c]) * B[,D] + (beta[2,c] + nu[2,c] * (D - 1)) * 0.513345195729537 + 
+                              (beta[3,c] + nu[3,c] * (D - 1)) * -0.137900355871886);
+    prob_excl[c] = inv_logit(alpha0[c] * D + to_row_vector(alpha[,c]) * B[,D] + (beta[2,c] + nu[2,c] * (D - 1)) * -0.486654804270463 + 
+                              (beta[3,c] + nu[3,c] * (D - 1)) * 0.862099644128114);
+    prob_partial[c] = inv_logit(alpha0[c] * D + to_row_vector(alpha[,c]) * B[,D] + (beta[2,c] + nu[2,c] * (D - 1)) * -0.486654804270463 + 
+                              (beta[3,c] + nu[3,c] * (D - 1)) * -0.137900355871886);
+    for (f in 1:F) {
+      prob_inst[f,c] = inv_logit(alpha0[c] * D + to_row_vector(alpha[,c]) * B[,D] + tau_lambda[c] * lambda[f,c]);
+    }
+    for (d in 1:D)
+        prob[d,c] = inv_logit(alpha0[c] * d + to_row_vector(alpha[,c]) * B[,d]);
+  }
       
 }
