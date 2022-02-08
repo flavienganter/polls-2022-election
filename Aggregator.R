@@ -214,21 +214,43 @@ save(spline_draws, file = "LatestDraws.RData")
 load("model_aggregator.RData")
 
 # Prepare draws
-spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
-colnames(spline_draws) <- "prob[1,1]"
-for (i in 1:aggregator_model@par_dims[["prob"]][1]) {
-  for (j in 1:12) {
-    if (!(i == 1 & j == 1)) {
-      spline_draws <- cbind(spline_draws,
-                            `prob[i,j]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
+
+  # Splines
+  spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
+  colnames(spline_draws) <- "prob[1,1]"
+  for (i in 1:aggregator_model@par_dims[["prob"]][1]) {
+    for (j in 1:12) {
+      if (!(i == 1 & j == 1)) {
+        spline_draws <- cbind(spline_draws,
+                              `prob[i,j]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
+      }
     }
   }
-}
+  
+  # Instantaneous estimates
+  inst_draws <- data.frame(`prob[1]` = rstan::extract(aggregator_model, pars = paste0("prob[", aggregator_model@par_dims[["prob"]][1], ",1]")))
+  colnames(inst_draws) <- "prob[111,1]"
+  for (j in 2:12) inst_draws <- cbind(inst_draws, `prob[j]` = rstan::extract(aggregator_model, pars = paste0("prob[", aggregator_model@par_dims[["prob"]][1], ",", j, "]")))
+  
+  # Inclusion estimates
+  inclusion_draws <- data.frame(`prob_excl[1]` = rstan::extract(aggregator_model, pars = "prob_excl[1]"))
+  colnames(inclusion_draws) <- "prob_excl[1]"
+  for (j in 2:12) inclusion_draws <- cbind(inclusion_draws, `prob_excl[j]` = rstan::extract(aggregator_model, pars = paste0("prob_excl[", j, "]")))
+  for (j in 1:12) inclusion_draws <- cbind(inclusion_draws, `prob_incl[j]` = rstan::extract(aggregator_model, pars = paste0("prob_incl[", j, "]")))
+  for (j in 1:12) inclusion_draws <- cbind(inclusion_draws, `prob_partial[j]` = rstan::extract(aggregator_model, pars = paste0("prob_partial[", j, "]")))
+
+  # Inclusion estimates
+  firm_draws <- data.frame(`prob_inst[1,5]` = rstan::extract(aggregator_model, pars = "prob_inst[1,5]"))
+  colnames(firm_draws) <- "prob_inst[1,5]"
+  for (i in 2:8) firm_draws <- cbind(firm_draws, `prob_inst[i,5]` = rstan::extract(aggregator_model, pars = paste0("prob_inst[", i, ",5]")))
+  for (i in 1:8) firm_draws <- cbind(firm_draws, `prob_inst[i,6]` = rstan::extract(aggregator_model, pars = paste0("prob_inst[", i, ",6]")))
+  for (i in 1:8) firm_draws <- cbind(firm_draws, `prob_inst[i,7]` = rstan::extract(aggregator_model, pars = paste0("prob_inst[", i, ",7]")))
+  for (i in 1:8) firm_draws <- cbind(firm_draws, `prob_inst[i,8]` = rstan::extract(aggregator_model, pars = paste0("prob_inst[", i, ",8]")))
+  for (i in 1:8) firm_draws <- cbind(firm_draws, `prob_inst[i,11]` = rstan::extract(aggregator_model, pars = paste0("prob_inst[", i, ",11]")))
 
 
 
-
-#### GENERATE PLOT ####
+#### SPLINE PLOT ####
 
 
 ## Prepare table for plot
@@ -277,13 +299,14 @@ candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), paste0(as.character(candidate), " (", unlist(lapply(median*100, round2)), "%)"), NA_character_),
-         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .002,
-                                  candidate == "Fabien Roussel" ~ median + .0025,
+         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .001,
+                                  candidate == "Fabien Roussel" ~ median + .00,
                                   candidate == "Nicolas Dupont-Aignan" ~ median - .0025,
-                                  candidate == "Philippe Poutou" ~ median - .00,
+                                  candidate == "Philippe Poutou" ~ median + .001,
                                   candidate == "Nathalie Arthaud" ~ median - .001,
                                   candidate == "Jean-Luc Mélenchon" ~ median,
-                                  candidate == "Yannick Jadot" ~ median,
+                                  candidate == "Yannick Jadot" ~ median + .002,
+                                  candidate == "Christiane Taubira" ~ median - .002,
                                   candidate == "Marine Le Pen" ~ median + .00,
                                   candidate == "Valérie Pécresse" ~ median - .00,
                                   !is.na(candidate) ~ median)) %>% 
@@ -334,13 +357,14 @@ poll_plot <- plot_spline_estimates %>%
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par IPSOS, IFOP, Harris Interactive, Elabe, Odoxa, OpinionWay et Cluster17 depuis septembre 2021 (sur la base des rapports d'enquête publics), et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le modèle prend en compte le fait que la candidature de Zemmour n'a pas été testée dans toutes les enquêtes début septembre, et que celle de Taubira n'a été testée qu'à partir de mi-décembre et seulement par certaines enquêtes. Les lignes relient les médianes des distributions a posteriori, et les zones \ncolorées représentent l'étendue des 95% les plus dense des distributions a posteriori (50%, pour la partie la plus sombre). D'après le modèle estimé, à un moment donné, les intentions de votes ont donc 95% de chances de se trouver dans l'intervalle le plus clair, et 50% de chances se trouver dans le plus sombre. \nDernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
+       subtitle = "Depuis septembre 2021",
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des distributions a posteriori. \nDernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
   
   # Specify plot theme
   theme_minimal() +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
-        panel.grid.major.y = element_line(color = "#858585", linetype = "dotted", size = 0.05),
+        panel.grid.major.y = element_line(color = "#2b2b2b", linetype = "dotted", size = 0.05),
         text = element_text(family = "Open Sans Condensed", size = 7.5),
         axis.text = element_text(size = 8),
         axis.text.x = element_text(hjust = 0),
@@ -372,6 +396,215 @@ poll_plot <- plot_spline_estimates %>%
 ## Export plot
 ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
        height = 6, width = 10, device = cairo_pdf)
-ggsave(poll_plot, filename = "PollsFrance2022_latest.pdf",
-       height = 10, width = 14, device = cairo_pdf)
+
+
+
+
+#### INSTANTANEOUS PLOT ####
+
+
+## Prepare table for plot
+
+# Calculate statistics of interest
+plot_inst_estimates <- apply(inst_draws, 2, function(x) c(hdi(x), hdi(x, .9), hdi(x, .8), hdi(x, .5), median(x))) %>%
+  t() %>% as.data.frame()
+
+# Rename names and columns
+names(plot_inst_estimates) <- c("lower95", "upper95", "lower90", "upper90", "lower80", "upper80", "lower50", "upper50", "median")
+plot_inst_estimates$coef <- row.names(plot_inst_estimates)
+
+# Name estimates: identify the date and candidate associated with each estimate
+plot_inst_estimates <- plot_inst_estimates %>%
+  mutate(label = paste0(unlist(lapply(median*100, round2)), "%"),
+         label = ifelse(label == "0.5%", "   0.5%", label),
+         candidate = substr(coef, 10, 11),
+         candidate = case_when(substr(candidate, 2, 2) == "]" ~ substr(candidate, 1, 1),
+                               TRUE ~ candidate),
+         candidate = as.factor(case_when(candidate == 1 ~ "Nathalie Arthaud",
+                                         candidate == 2 ~ "Nicolas Dupont-Aignan",
+                                         candidate == 3 ~ "Anne Hidalgo",
+                                         candidate == 4 ~ "Yannick Jadot",
+                                         candidate == 5 ~ "Marine Le Pen",
+                                         candidate == 6 ~ "Emmanuel Macron",
+                                         candidate == 7 ~ "Jean-Luc Mélenchon",
+                                         candidate == 8 ~ "Valérie Pécresse",
+                                         candidate == 9 ~ "Philippe Poutou",
+                                         candidate == 10 ~ "Fabien Roussel",
+                                         candidate == 11 ~ "Eric Zemmour",
+                                         candidate == 12 ~ "Christiane Taubira")))
+plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
+                                             levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Eric Zemmour", 
+                                                        "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
+                                                        "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
+                                                        "Yannick Jadot")[c(3, 7, 11, 4, 6, 12, 2, 5, 1, 9, 10, 8)])
+
+
+## Create plot
+
+# Define candidate colors
+candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 11, 4, 6, 12, 2, 5, 1, 9, 10, 8)]
+
+# Generate plot
+inst_plot <- plot_inst_estimates %>% 
+  ggplot(aes(x = candidate, color = candidate)) +
+  
+  # Plot data
+  geom_linerange(aes(ymin = lower50 * 100, ymax = upper50 * 100), alpha = .2, size = 10) +
+  geom_linerange(aes(ymin = lower80 * 100, ymax = upper80 * 100), alpha = .2, size = 10) +
+  geom_linerange(aes(ymin = lower90 * 100, ymax = upper90 * 100), alpha = .2, size = 10) +
+  geom_linerange(aes(ymin = lower95 * 100, ymax = upper95 * 100), alpha = .2, size = 10) +
+  geom_linerange(aes(ymin = median * 100 - .05, ymax = median * 100 + .05), size = 12, color = "white") +
+  geom_linerange(aes(ymin = median * 100 - .02, ymax = median * 100 + .02), size = 11, color = "gray30") +
+  geom_text(aes(label = label, y = median*100), family = "Open Sans Condensed SemiBold", vjust = -1.65) +
+  
+  # Define labs
+  labs(x = "", y = "Intentions de votes (% votes exprimés)",
+       title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
+       subtitle = paste("Au", format(Sys.time(), "%d %B %Y")),
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster 17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une \nrégression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 90% / 80% / 50%) des distributions a posteriori.")) +
+  
+  # Specify plot theme
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(color = "#2b2b2b", linetype = "dotted", size = 0.05),
+        panel.grid.major.y = element_line(color = "gray99", size = 10),
+        text = element_text(family = "Open Sans Condensed", size = 7.5),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 12, family = "Open Sans Condensed", face = "bold"),
+        axis.title = element_blank(),
+        axis.line.x = element_line(color = "#2b2b2b", size = 0.15),
+        axis.ticks.x = element_line(color = "#2b2b2b", size = 0.15),
+        axis.ticks.length = unit(.2, "cm"),
+        plot.title = element_text(size = 20, family = "Open Sans Condensed ExtraBold", face = "bold"),
+        plot.subtitle = element_text(size = 15),
+        plot.title.position = "plot",
+        legend.position = "none",
+        plot.caption = element_text(color = "gray30", hjust = 0, margin = margin(t = 15)),
+        plot.margin = unit(rep(0.5, 4), "cm")) +
+  
+  # Candidate colors
+  guides(color = guide_legend(nrow = 3, byrow = TRUE)) +
+  scale_colour_manual(values = candidate_colors) +
+  scale_fill_manual(values = candidate_colors) +
+  
+  # Percent axis
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 27))
+
+
+## Export plot
+ggsave(inst_plot, filename = "PollsFrance2022_inst.pdf",
+       height = 7.5, width = 10, device = cairo_pdf)
+
+
+
+
+#### INCLUSION PLOT ####
+
+
+## Prepare table for plot
+
+# Calculate statistics of interest
+plot_inclusion_estimates <- apply(inclusion_draws, 2, function(x) c(hdi(x), hdi(x, .9), hdi(x, .8), hdi(x, .5), median(x))) %>%
+  t() %>% as.data.frame()
+
+# Rename names and columns
+names(plot_inclusion_estimates) <- c("lower95", "upper95", "lower90", "upper90", "lower80", "upper80", "lower50", "upper50", "median")
+plot_inclusion_estimates$coef <- row.names(plot_inclusion_estimates)
+
+# Name estimates: identify the date and candidate associated with each estimate
+plot_inclusion_estimates <- plot_inclusion_estimates %>%
+  mutate(estimand = str_extract(coef, "^[^\\[]+"),
+         candidate = substr(coef, nchar(coef)-2, nchar(coef)-1),
+         candidate = case_when(substr(candidate, 1, 1) == "[" ~ substr(candidate, 2, 3),
+                               TRUE ~ candidate),
+         candidate = as.factor(case_when(candidate == 1 ~ "Nathalie Arthaud",
+                                         candidate == 2 ~ "Nicolas Dupont-Aignan",
+                                         candidate == 3 ~ "Anne Hidalgo",
+                                         candidate == 4 ~ "Yannick Jadot",
+                                         candidate == 5 ~ "Marine Le Pen",
+                                         candidate == 6 ~ "Emmanuel Macron",
+                                         candidate == 7 ~ "Jean-Luc Mélenchon",
+                                         candidate == 8 ~ "Valérie Pécresse",
+                                         candidate == 9 ~ "Philippe Poutou",
+                                         candidate == 10 ~ "Fabien Roussel",
+                                         candidate == 11 ~ "Eric Zemmour",
+                                         candidate == 12 ~ "Christiane Taubira")))
+plot_inclusion_estimates$candidate <- factor(plot_inclusion_estimates$candidate,
+                                          levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Eric Zemmour", 
+                                                     "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
+                                                     "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
+                                                     "Yannick Jadot")[c(3, 7, 11, 4, 6, 12, 2, 5, 1, 9, 10, 8)])
+
+
+## Create plot
+
+# Define candidate colors
+candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 11, 4, 6, 12, 2, 5, 1, 9, 10, 8)]
+
+# Generate plot
+inclusion_plot <- plot_inclusion_estimates %>% 
+  ggplot(aes(x = candidate, color = candidate)) +
+  
+  # Plot data
+  geom_linerange(aes(ymin = lower50 * 100, ymax = upper50 * 100), alpha = .2, size = 5, position = position_dodge2(width = 1)) +
+  geom_linerange(aes(ymin = lower80 * 100, ymax = upper80 * 100), alpha = .2, size = 5, position = position_dodge2(width = 1)) +
+  geom_linerange(aes(ymin = lower90 * 100, ymax = upper90 * 100), alpha = .2, size = 5, position = position_dodge2(width = 1)) +
+  geom_linerange(aes(ymin = lower95 * 100, ymax = upper95 * 100), alpha = .2, size = 5, position = position_dodge2(width = 1)) +
+  geom_linerange(aes(ymin = median * 100 - .05, ymax = median * 100 + .05), size = 7, position = position_dodge2(width = 1),
+                 color = "white") +
+  geom_linerange(aes(ymin = median * 100 - .02, ymax = median * 100 + .02), size = 6, position = position_dodge2(width = 1),
+                 color = "gray30") +
+  
+  # Arrows
+  annotate("text",
+           x = c(6.5, 7, 7.5),
+           y = c(10.15, 10.5, 13.75),
+           label = c("Enquêtés incertains exclus (IPSOS)", "Enquêtés incertains inclus (Harris, IFOP)", "Enquêtés incertains partiellement inclus (BVA, Cluster17, Elabe, Odoxa, OpinionWay)"),
+           family = "Open Sans Condensed", size = 3) +
+  annotate("segment",
+           x = c(6.5, 7, 7.5), xend = c(6.65, 7, 7.35),
+           y = c(7.4, 7.4, 7.4), yend = c(6.4, 5.5, 6.4),
+           size = .3, arrow = arrow(angle = 30, length = unit(2, "mm"))) +
+
+  # Define labs
+  labs(x = "", y = "Intentions de votes (% votes exprimés)",
+       title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
+       subtitle = paste("Au", format(Sys.time(), "%d %B %Y")),
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster 17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une \nrégression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 90% / 80% / 50%) des distributions a posteriori.")) +
+  
+  # Specify plot theme
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(color = "#2b2b2b", linetype = "dotted", size = 0.05),
+        panel.grid.major.y = element_line(color = "gray99", size = 10),
+        text = element_text(family = "Open Sans Condensed", size = 7.5),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 12, family = "Open Sans Condensed", face = "bold"),
+        axis.title = element_blank(),
+        axis.line.x = element_line(color = "#2b2b2b", size = 0.15),
+        axis.ticks.x = element_line(color = "#2b2b2b", size = 0.15),
+        axis.ticks.length = unit(.2, "cm"),
+        plot.title = element_text(size = 20, family = "Open Sans Condensed ExtraBold", face = "bold"),
+        plot.subtitle = element_text(size = 15),
+        plot.title.position = "plot",
+        legend.position = "none",
+        plot.caption = element_text(color = "gray30", hjust = 0, margin = margin(t = 15)),
+        plot.margin = unit(rep(0.5, 4), "cm")) +
+  
+  # Candidate colors
+  guides(color = guide_legend(nrow = 3, byrow = TRUE)) +
+  scale_colour_manual(values = candidate_colors) +
+  scale_fill_manual(values = candidate_colors) +
+  
+  # Percent axis
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 29))
+
+
+## Export plot
+ggsave(inclusion_plot, filename = "PollsFrance2022_inclusion.pdf",
+       height = 8, width = 10, device = cairo_pdf)
 
