@@ -269,7 +269,7 @@ plot_spline_estimates <- plot_spline_estimates %>%
                                          candidate == 8 ~ "Valérie Pécresse",
                                          candidate == 9 ~ "Philippe Poutou",
                                          candidate == 10 ~ "Fabien Roussel",
-                                         candidate == 11 ~ "Eric Zemmour",
+                                         candidate == 11 ~ "Éric Zemmour",
                                          candidate == 12 ~ "Christiane Taubira"))) %>% 
   filter(candidate != "Christiane Taubira" | (candidate == "Christiane Taubira" & date >= "2021-12-15"))
 
@@ -283,16 +283,17 @@ candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30
 # Generate plot
 poll_plot <- plot_spline_estimates %>% 
   mutate(label = if_else(date == max(date), paste0(as.character(candidate), " (", unlist(lapply(median*100, round2)), "%)"), NA_character_),
-         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .001,
+         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .00,
                                   candidate == "Fabien Roussel" ~ median + .00,
-                                  candidate == "Nicolas Dupont-Aignan" ~ median - .0025,
-                                  candidate == "Philippe Poutou" ~ median + .001,
-                                  candidate == "Nathalie Arthaud" ~ median - .001,
+                                  candidate == "Nicolas Dupont-Aignan" ~ median - .00,
+                                  candidate == "Philippe Poutou" ~ median + .0015,
+                                  candidate == "Nathalie Arthaud" ~ median - .0015,
                                   candidate == "Jean-Luc Mélenchon" ~ median,
-                                  candidate == "Yannick Jadot" ~ median + .002,
-                                  candidate == "Christiane Taubira" ~ median - .002,
+                                  candidate == "Yannick Jadot" ~ median + .001,
+                                  candidate == "Christiane Taubira" ~ median - .00,
                                   candidate == "Marine Le Pen" ~ median + .00,
-                                  candidate == "Valérie Pécresse" ~ median - .00,
+                                  candidate == "Valérie Pécresse" ~ median + .002,
+                                  candidate == "Éric Zemmour" ~ median - .002,
                                   !is.na(candidate) ~ median)) %>% 
   group_by(candidate) %>% 
   mutate(lower50_l = zoo::rollmean(lower50, k = 2, align = "left", fill = NA),
