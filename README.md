@@ -2,11 +2,11 @@
 
 My current estimates of the voting intentions for the first round of the 2022 French Presidential Election are reported in this graph, which shows the medians of the posterior distributions, as well as 95%, 90%, 80%, and 50% high density credible intervals:
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_latest.pdf?raw=true)
+![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_latest.supporting?raw=true)
 
 The evolutions of voting intentions since September 2021 are displayed in the following graph, which shows the medians of the posterior distributions, as well as 95% and 50% high density credible intervals:
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_evolution.pdf?raw=true)
+![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_evolution.png?raw=true)
 
 The quantity of interest is the average share of the voting intentions that each candidate gets at each date, in scenarios where Éric Zemmour and Christiane Taubira are candidate, and in regular polls (as opposed to rolling polls).
 
