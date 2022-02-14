@@ -13,7 +13,7 @@ data {
   int M;
   int id_firm[N];
   int F;
-  matrix[N,4] X;
+  matrix[N,3] X;
   
   // EZ and CT adjustement
   int isn_z[N];
@@ -61,8 +61,8 @@ transformed parameters {
   matrix[num_basis,C] alpha;
   real<lower=0> tau_mu[C];
   real<lower=0> tau_lambda[C];
-  matrix[4,C] beta;
-  matrix[3,C] nu;
+  matrix[3,C] beta;
+  matrix[2,C] nu;
   real gamma_z[C];
   real gamma_t[C];
   
@@ -78,9 +78,9 @@ transformed parameters {
   for (c in 1:C) {
     tau_mu[c] = exp(sigma_mu * tau_mu_tilde[c]); 
     tau_lambda[c] = exp(sigma_lambda * tau_lambda_tilde[c]);
-    for (x in 1:4)
-      beta[x,c] = sigma_beta[x] * tau_beta_tilde[x,c];
     for (x in 1:3)
+      beta[x,c] = sigma_beta[x] * tau_beta_tilde[x,c];
+    for (x in 1:2)
       nu[x,c] = sigma_nu[x] * tau_nu_tilde[x,c];
     if (c < 11) {
       gamma_z[c] = tau_gamma_z * gamma_z_tilde[c];
@@ -102,9 +102,9 @@ model {
   tau_alpha ~ normal(0, sigma_alpha);
   sigma_alpha0 ~ student_t(3, 0, 1);
   sigma_alpha ~ student_t(3, 0, 1);
-  for (x in 1:4)
-    tau_beta_tilde[x,] ~ normal(0, 1);
   for (x in 1:3)
+    tau_beta_tilde[x,] ~ normal(0, 1);
+  for (x in 1:2)
     tau_nu_tilde[x,] ~ normal(0, 1);
   tau_mu_tilde ~ normal(0, 1);
   tau_lambda_tilde ~ normal(0, 1);
@@ -129,28 +129,25 @@ model {
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
-                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
+                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,4] * beta[4,id_cand[i]] +
+                                  X[i,3] * beta[3,id_cand[i]] +
                                   gamma_z[id_cand[i]] * isn_z[i]); // EZ omission adjustment
     } else if (id_month[i] < 4) {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
-                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
+                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,4] * beta[4,id_cand[i]]);
+                                  X[i,3] * beta[3,id_cand[i]]);
     } else {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
                                   tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
-                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Sample size and population definition effects
+                                  X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,3] * (beta[3,id_cand[i]] + nu[3,id_cand[i]] * (id_date[i] - 1)) +
-                                  X[i,4] * beta[4,id_cand[i]] +
+                                  X[i,3] * beta[3,id_cand[i]] +
                                   gamma_t[id_cand[i]] * isn_t[i]); // CT omission adjustment
     }
   }

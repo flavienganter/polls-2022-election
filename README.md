@@ -36,9 +36,9 @@ where (_B<sub>3k</sub>_(.))<sub>_k_</sub> is a sequence of _B_-splines. I define
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_alpha2.png?raw=true)
 
-### Poll and Polling Firm Effects
+### Poll and House Effects
 
-In order to partially pool information among the various scenarios of the same poll, I include a candidate-specific poll effect 𝜇<sub>_cp[i]_</sub>, and I also adjust for polling firm effects (𝜆<sub>_co[i]_</sub>). Both effects are given a hierarchical structure and estimated with weakly informative priors:
+In order to partially pool information among the various scenarios of the same poll, I include a candidate-specific poll effect 𝜇<sub>_cp[i]_</sub>, and I also adjust for house effects (𝜆<sub>_co[i]_</sub>). Both effects are given a hierarchical structure and estimated with weakly informative priors:
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_mu.png?raw=true)
 
@@ -52,6 +52,6 @@ In the same vein, polls before December 15 did not include scenarios with Christ
 
 ### Other Covariates
 
-The vector _X<sub>i</sub>_ includes log(_n<sub>i</sub>_) to adjust for a potential sample size effect, two (standardized) dummies that adjust for the subsample of respondents that the polling firm calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and one additional (standardized) dummy that adjusts for whether the poll is a rolling poll. To allow the effect of these covariates to vary as the election date gets closer, these coefficients (except for the rolling poll dummy) incorporate a time trend:
+The vector _X<sub>i</sub>_ includes two (standardized) dummies that adjust for the subsample of respondents that the polling firm calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and one additional (standardized) dummy that adjusts for whether the poll is a rolling poll. To allow the effect of these covariates to vary as the election date gets closer, these coefficients (except for the rolling poll dummy, for now) incorporate a time trend:
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta.png?raw=true)

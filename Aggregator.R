@@ -81,7 +81,7 @@ data <- read_excel("PollsData.xlsx") %>%
            isnot_zemmour == 0) %>%
     
   # Remove weird scenarios re: Taubira
-  filter(is.na(omit)) %>% 
+  filter(omit != 1) %>% 
     
   # Remove scenarios w/o VP
   filter(!is.na(c_pecresse)) %>% 
@@ -106,24 +106,28 @@ data <- read_excel("PollsData.xlsx") %>%
   # the number of candidates tested varies between and within polls
   group_by(id_hyp) %>% 
   mutate(share = share / sum(share)) %>%
-  
-  # Remove candidates who are not consistently tested
-    ## Estimates for these candidates are very noisy, and not
-    ## necessarily relevant. Omitting then does not affect the
-    ## estimation for other candidates
-  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_montebourg",
-                           "c_philippot", "c_thouy")) %>% 
   ungroup() %>% 
   
   # Switch from share for numbers, create a logged sample size variable,
   # and center and standardize the variable that indicates what respondents
   # are included in the estimates (all of them, only those who are certain to
   # vote, or a mix of both)
-  mutate(eff = round(n * share),
-         log_n = log(n) - mean(log(n)),
+  mutate(vote_eff = round(n * n_wgt * share),
          unsure_1 = scale_factor(variable = unsure)[[1]],
          unsure_2 = scale_factor(variable = unsure)[[2]],
          rolling_yes = scale_factor(variable = rolling)) %>% 
+    
+  # Correct for rounding differences in N
+  group_by(id_hyp) %>%
+  mutate(tot_eff = sum(vote_eff)) %>% 
+  ungroup() %>% 
+    
+  # Remove candidates who are not consistently tested
+    ## Estimates for these candidates are very noisy, and not
+    ## necessarily relevant. Omitting then does not affect the
+    ## estimation for other candidates
+  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_montebourg",
+                           "c_philippot", "c_thouy")) %>% 
   
   # Create a candidate ID
   mutate(id_candidate = case_when(candidate == "c_arthaud" ~ 1,
@@ -157,15 +161,15 @@ save(data, file = "PollsData.RData")
 if (0) { # Model run in a separate cluster
 
 # Define splines 
-num_knots     <- 8
+num_knots     <- 10
 spline_degree <- 3
 num_basis     <- num_knots + spline_degree - 1
 B             <- t(bs(1:max(data$id_date), df = num_basis, degree = spline_degree, intercept = TRUE))
 
 # Gather data to feed the model
 data_spline_model <- list(N             = nrow(data),
-                          tot_eff       = data$n,
-                          vote_eff      = data$eff,
+                          tot_eff       = data$tot_eff,
+                          vote_eff      = data$vote_eff,
                           id_cand       = data$id_candidate,
                           C             = length(unique(data$id_candidate)),
                           id_date       = data$id_date,
@@ -175,11 +179,13 @@ data_spline_model <- list(N             = nrow(data),
                           P             = length(unique(data$id)),
                           id_firm       = data$id_firm,
                           F             = length(unique(data$id_firm)),
-                          X             = data[, c("log_n", "unsure_1", "unsure_2", "rolling_yes")],
+                          X             = data[, c("unsure_1", "unsure_2", "rolling_yes")],
                           isn_z         = data$isnot_zemmour,
                           isn_t         = data$isnot_taubira,
                           num_knots     = num_knots,
-                          knots         = unname(quantile(1:max(data$id_date), probs = seq(from = 0, to = 1, length.out = num_knots))),
+                          knots         = unname(quantile(1:max(data$id_date),
+                                                          probs = seq(from = 0, to = 1,
+                                                                      length.out = num_knots))),
                           spline_degree = spline_degree,
                           num_basis     = num_basis,
                           D             = ncol(B),
