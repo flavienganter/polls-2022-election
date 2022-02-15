@@ -349,7 +349,7 @@ poll_plot <- plot_spline_estimates %>%
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
        subtitle = "Depuis septembre 2021",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une régression locale bayésienne tenant compte des principales caractéristiques des \nenquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des distributions a posteriori. \nDernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une régression locale bayésienne tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Dernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
   
   # Specify plot theme
   theme_minimal() +
@@ -429,14 +429,14 @@ plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
                                              levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Eric Zemmour", 
                                                         "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
                                                         "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
-                                                        "Yannick Jadot")[c(3, 7, 11, 4, 6, 12, 2, 5, 1, 9, 10, 8)])
+                                                        "Yannick Jadot")[c(3, 7, 11, 4, 6, 12, 5, 2, 1, 9, 10, 8)])
 
 
 ## Create plot
 
 # Define candidate colors
 candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
-                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 11, 4, 6, 12, 2, 5, 1, 9, 10, 8)]
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 11, 4, 6, 12, 5, 2, 1, 9, 10, 8)]
 
 # Generate plot
 inst_plot <- plot_inst_estimates %>% 
@@ -448,7 +448,7 @@ inst_plot <- plot_inst_estimates %>%
   geom_linerange(aes(ymin = lower90 * 100, ymax = upper90 * 100), alpha = .2, size = 10) +
   geom_linerange(aes(ymin = lower95 * 100, ymax = upper95 * 100), alpha = .2, size = 10) +
   geom_linerange(aes(ymin = median * 100 - .05, ymax = median * 100 + .05), size = 12, color = "white") +
-  geom_linerange(aes(ymin = median * 100 - .02, ymax = median * 100 + .02), size = 11, color = "gray30") +
+  geom_linerange(aes(ymin = median * 100 - .02, ymax = median * 100 + .02), size = 11) +
   geom_text(aes(label = label, y = median*100), family = "Open Sans Condensed SemiBold", vjust = -1.65) +
   
   # Define labs
