@@ -295,11 +295,11 @@ poll_plot <- plot_spline_estimates %>%
                                   candidate == "Philippe Poutou" ~ median + .0015,
                                   candidate == "Nathalie Arthaud" ~ median - .0015,
                                   candidate == "Jean-Luc Mélenchon" ~ median,
-                                  candidate == "Yannick Jadot" ~ median + .001,
+                                  candidate == "Yannick Jadot" ~ median + .00,
                                   candidate == "Christiane Taubira" ~ median - .00,
                                   candidate == "Marine Le Pen" ~ median + .00,
-                                  candidate == "Valérie Pécresse" ~ median + .002,
-                                  candidate == "Éric Zemmour" ~ median - .002,
+                                  candidate == "Valérie Pécresse" ~ median + .00,
+                                  candidate == "Éric Zemmour" ~ median - .00,
                                   !is.na(candidate) ~ median)) %>% 
   group_by(candidate) %>% 
   mutate(lower50_l = zoo::rollmean(lower50, k = 2, align = "left", fill = NA),
@@ -429,14 +429,14 @@ plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
                                              levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Eric Zemmour", 
                                                         "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
                                                         "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
-                                                        "Yannick Jadot")[c(3, 7, 11, 4, 6, 12, 5, 2, 1, 9, 10, 8)])
+                                                        "Yannick Jadot")[c(3, 7, 4, 11, 6, 12, 5, 2, 1, 9, 10, 8)])
 
 
 ## Create plot
 
 # Define candidate colors
 candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
-                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 11, 4, 6, 12, 5, 2, 1, 9, 10, 8)]
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 4, 11, 6, 12, 5, 2, 1, 9, 10, 8)]
 
 # Generate plot
 inst_plot <- plot_inst_estimates %>% 
