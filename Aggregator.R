@@ -117,7 +117,7 @@ data <- read_excel("PollsData.xlsx") %>%
   # and center and standardize the variable that indicates what respondents
   # are included in the estimates (all of them, only those who are certain to
   # vote, or a mix of both)
-  mutate(vote_eff = n_t1 * n_wgt * share,
+  mutate(vote_eff = round(n_t1 * n_wgt * share),
          unsure_1 = scale_factor(variable = unsure)[[1]],
          unsure_2 = scale_factor(variable = unsure)[[2]],
          rolling_yes = scale_factor(variable = poll_type)) %>% 
@@ -151,20 +151,14 @@ data <- read_excel("PollsData.xlsx") %>%
   # Create date IDs
   mutate(id_date_start = as.numeric(as.Date(paste(year, month_start, day_start, sep = "-"))) - 18869,
          id_date_end = as.numeric(as.Date(paste(year, month_end, day_end, sep = "-"))) - 18869,
-         id_month = case_when(month_start > 8 ~ month_start - 8,  TRUE ~ month_start + 4)) %>% 
-    
-  # Divide Ns by field period length
-  mutate(field_period_lgth = id_date_end - id_date_start + 1,
-         vote_eff = round(vote_eff / field_period_lgth)) %>% 
+         id_date = id_date_start + (id_date_end - id_date_start) / 2,
+         id_month = as.numeric(format(as.Date(as.numeric(round(id_date)), origin = as.Date("2021-08-31")), "%m")),
+         id_month = case_when(id_month > 8 ~ id_month - 8,  TRUE ~ id_month + 4)) %>% 
     
   # Correct for rounding differences in Ns
   group_by(id_hyp) %>%
   mutate(tot_eff = sum(vote_eff)) %>% 
-  ungroup() %>% 
-    
-  # Expand rows over each poll's field period
-  uncount(field_period_lgth, .id = "id_expand") %>% 
-  mutate(id_date = id_date_start + id_expand - 1)
+  ungroup()
   
   
 # Export
