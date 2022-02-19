@@ -34,15 +34,9 @@ where (_B<sub>3k</sub>_(.))<sub>_k_</sub> is a sequence of _B_-splines. I define
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_alpha1.png?raw=true)
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_alpha2.png?raw=true)
-
 ### Poll and House Effects
 
-In order to partially pool information among the various scenarios of the same poll, I include a candidate-specific poll effect 𝜇<sub>_cp[i]_</sub>, and I also adjust for house effects (𝜆<sub>_co[i]_</sub>). Both effects are given a hierarchical structure and estimated with weakly informative priors:
-
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_mu.png?raw=true)
-
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_lambda.png?raw=true)
+In order to partially pool information among the various scenarios of the same poll, I include a candidate-specific poll effect 𝜇<sub>_cp[i]_</sub>, and I also adjust for house effects (𝜆<sub>_co[i]_</sub>).
 
 ### Zemmour and Taubira Adjustments
 
