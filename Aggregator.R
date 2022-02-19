@@ -2,7 +2,7 @@
 # Flavien Ganter
 
 # Created on October 4, 2021
-# Last modified on January 7, 2022
+# Last modified on February 18, 2022
 
 
 
@@ -77,11 +77,11 @@ data <- read_excel("PollsData.xlsx") %>%
          isnot_taubira = ifelse(is.na(c_taubira), 1, 0)) %>%
     
   # Remove scenarios w/o EZ after September
-  filter((isnot_zemmour == 1 & month == 9) |
+  filter((isnot_zemmour == 1 & month_end == 9) |
            isnot_zemmour == 0) %>%
     
   # Remove weird scenarios re: Taubira
-  filter(omit != 1) %>% 
+  filter(n_wgt > 0) %>% 
     
   # Remove scenarios w/o VP
   filter(!is.na(c_pecresse)) %>% 
@@ -107,20 +107,20 @@ data <- read_excel("PollsData.xlsx") %>%
   group_by(id_hyp) %>% 
   mutate(share = share / sum(share)) %>%
   ungroup() %>% 
+    
+  # Renumber polls (to account for polls that have been removed)
+  group_by(id) %>% 
+  mutate(id = cur_group_id()) %>% 
+  ungroup() %>% 
   
   # Switch from share for numbers, create a logged sample size variable,
   # and center and standardize the variable that indicates what respondents
   # are included in the estimates (all of them, only those who are certain to
   # vote, or a mix of both)
-  mutate(vote_eff = round(n * n_wgt * share),
+  mutate(vote_eff = n_t1 * n_wgt * share,
          unsure_1 = scale_factor(variable = unsure)[[1]],
          unsure_2 = scale_factor(variable = unsure)[[2]],
-         rolling_yes = scale_factor(variable = rolling)) %>% 
-    
-  # Correct for rounding differences in N
-  group_by(id_hyp) %>%
-  mutate(tot_eff = sum(vote_eff)) %>% 
-  ungroup() %>% 
+         rolling_yes = scale_factor(variable = poll_type)) %>% 
     
   # Remove candidates who are not consistently tested
     ## Estimates for these candidates are very noisy, and not
@@ -143,14 +143,29 @@ data <- read_excel("PollsData.xlsx") %>%
                                   candidate == "c_zemmour" ~ 11,
                                   candidate == "c_taubira" ~ 12)) %>% 
   
-  # Create a firm ID and recode poll dates
-    ## Poll dates are the median dates of data collection, or the first day after
-    ## the median, if the median is not properly defined.
-  group_by(firm) %>% 
-  mutate(id_firm = cur_group_id(),
-         id_date = as.numeric(as.Date(paste(year, month, day, sep = "-"))) - 18870,
-         id_month = case_when(month > 8 ~ month-8,
-                              TRUE ~ month+4))
+  # Create a house ID
+  group_by(house) %>% 
+  mutate(id_house = cur_group_id()) %>% 
+  ungroup() %>% 
+    
+  # Create date IDs
+  mutate(id_date_start = as.numeric(as.Date(paste(year, month_start, day_start, sep = "-"))) - 18869,
+         id_date_end = as.numeric(as.Date(paste(year, month_end, day_end, sep = "-"))) - 18869,
+         id_month = case_when(month_start > 8 ~ month_start - 8,  TRUE ~ month_start + 4)) %>% 
+    
+  # Divide Ns by field period length
+  mutate(field_period_lgth = id_date_end - id_date_start + 1,
+         vote_eff = round(vote_eff / field_period_lgth)) %>% 
+    
+  # Correct for rounding differences in Ns
+  group_by(id_hyp) %>%
+  mutate(tot_eff = sum(vote_eff)) %>% 
+  ungroup() %>% 
+    
+  # Expand rows over each poll's field period
+  uncount(field_period_lgth, .id = "id_expand") %>% 
+  mutate(id_date = id_date_start + id_expand - 1)
+  
   
 # Export
 save(data, file = "PollsData.RData")
@@ -349,7 +364,7 @@ poll_plot <- plot_spline_estimates %>%
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
        subtitle = "Depuis septembre 2021",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une régression locale bayésienne tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Dernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'un modèle bayésien tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Dernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
   
   # Specify plot theme
   theme_minimal() +
@@ -455,7 +470,7 @@ inst_plot <- plot_inst_estimates %>%
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
        subtitle = paste("Au", format(Sys.time(), "%d %B %Y")),
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster 17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'une \nrégression locale bayésienne tenant compte des principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 90% / 80% / 50%) des distributions a posteriori.")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'un \nmodèle bayésien tenant compte des principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 90% / 80% / 50%) des distributions a posteriori.")) +
   
   # Specify plot theme
   coord_flip() +
