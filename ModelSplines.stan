@@ -11,7 +11,7 @@ data {
   int id_date[N];
   int id_month[N];
   int M;
-  int id_firm[N];
+  int id_house[N];
   int F;
   matrix[N,3] X;
   
@@ -128,15 +128,15 @@ model {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
-                                  tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
+                                  tau_lambda[id_cand[i]] * lambda[id_house[i],id_cand[i]] + // House effect
                                   X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,3] * beta[3,id_cand[i]] +
                                   gamma_z[id_cand[i]] * isn_z[i]); // EZ omission adjustment
-    } else if (id_month[i] < 4) {
+    } else if (id_month[i] < 4 || id_month[i] > 5) {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
-                                  tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
+                                  tau_lambda[id_cand[i]] * lambda[id_house[i],id_cand[i]] + // House effect
                                   X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,3] * beta[3,id_cand[i]]);
@@ -144,7 +144,7 @@ model {
       target += binomial_logit_lpmf(vote_eff[i] | tot_eff[i],
                                   alpha0[id_cand[i]] * id_date[i] + to_row_vector(alpha[,id_cand[i]]) * B[,id_date[i]] + // Spline
                                   tau_mu[id_cand[i]] * mu[id_poll[i],id_cand[i]] + // Poll effect
-                                  tau_lambda[id_cand[i]] * lambda[id_firm[i],id_cand[i]] + // Firm effect
+                                  tau_lambda[id_cand[i]] * lambda[id_house[i],id_cand[i]] + // House effect
                                   X[i,1] * (beta[1,id_cand[i]] + nu[1,id_cand[i]] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2,id_cand[i]] + nu[2,id_cand[i]] * (id_date[i] - 1)) +
                                   X[i,3] * beta[3,id_cand[i]] +
