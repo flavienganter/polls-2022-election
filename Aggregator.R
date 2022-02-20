@@ -110,7 +110,7 @@ data <- read_excel("PollsData.xlsx") %>%
     
   # Renumber polls (to account for polls that have been removed)
   group_by(id) %>% 
-  mutate(id = cur_group_id()) %>% 
+  mutate(id_poll = cur_group_id()) %>% 
   ungroup() %>% 
   
   # Switch from share for numbers, create a logged sample size variable,
