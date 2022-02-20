@@ -3,7 +3,7 @@
 # Flavien Ganter
 
 # Created on October 27, 2021
-# Modified on February 19, 2022
+# Modified on February 20, 2022
 
 
 
@@ -18,6 +18,7 @@ rm(list = ls())
 # Packages
 library(rstan)
 library(splines)
+library(tidyverse)
 
 # Commands
 "%nin%" <- Negate("%in%")
@@ -29,7 +30,10 @@ args <- as.numeric(slurm_arrayid)
 
 # Data
 load("PollsData.RData")
-data <- data[data$id_candidate == args[1],]
+data <- data %>% 
+  filter(id_candidate == args[1]) %>% 
+  group_by(id_poll) %>% mutate(id_poll = cur_group_id()) %>% ungroup() %>% 
+  group_by(id_house) %>% mutate(id_house = cur_group_id()) %>% ungroup()
 
 
 
@@ -50,8 +54,8 @@ data_spline_model <- list(N             = nrow(data),
                           id_date       = round(data$id_date),
                           id_month      = data$id_month,
                           M             = length(unique(data$id_month)),
-                          id_poll       = data$id,
-                          P             = length(unique(data$id)),
+                          id_poll       = data$id_poll,
+                          P             = length(unique(data$id_poll)),
                           id_house       = data$id_house,
                           F             = length(unique(data$id_house)),
                           X             = data[, c("unsure_1", "unsure_2", "rolling_yes")],
@@ -72,6 +76,6 @@ aggregator_model <- stan(file = "ModelSplinesByC.stan",
                          include = TRUE,
                          pars = c("prob"),
                          save_warmup = FALSE,
-                         control = list(adapt_delta = .95, max_treedepth = 13))
+                         control = list(adapt_delta = .99, max_treedepth = 13))
 
 save(aggregator_model, file = paste0("/rigel/sscc/users/fg2465/model_aggregator_", args[1], ".RData"))
