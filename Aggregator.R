@@ -458,7 +458,7 @@ inst_plot <- plot_inst_estimates %>%
   geom_linerange(aes(ymin = lower95 * 100, ymax = upper95 * 100), alpha = .2, size = 10) +
   geom_linerange(aes(ymin = median * 100 - .05, ymax = median * 100 + .05), size = 12, color = "white") +
   geom_linerange(aes(ymin = median * 100 - .02, ymax = median * 100 + .02), size = 11) +
-  geom_text(aes(label = label, y = median*100), family = "Open Sans Condensed SemiBold", vjust = -1.65) +
+  geom_text(aes(label = label, y = median * 100), family = "Open Sans Condensed SemiBold", vjust = -1.65) +
   
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",
