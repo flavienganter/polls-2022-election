@@ -24,7 +24,7 @@ where _b<sub>ci</sub><sup>l</sup>_ and _b<sub>ci</sub><sup>u</sup>_ define the i
 
 Noting _N<sub>i</sub>_ the total number of respondents disclosing their voting intentions in the scenario _i_, I model the latent variable _s<sup>*</sup><sub>ci</sub>_ with a Beta distribution:
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/binomial.png?raw=true)
+![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta_m.png?raw=true)
 
 where 𝜽<sub>_ci_</sub> is defined as:
 
