@@ -4,12 +4,18 @@ data {
   int N;
   int id_cand;
   int tot_eff[N];
-  int id_hyp[N];
-  int H;
-  int censored[N];
-  real<lower=0,upper=1> bound_l[N];
-  real<lower=0,upper=1> bound_r[N];
-  int id_expand[N];
+  real<lower=0,upper=1> vshare_raw[N];
+  int rounding_ind[N];
+  int r_1[N];
+  int N_1;
+  int r_2[N];
+  int N_2;
+  int r_3[N];
+  int N_3;
+  int r_4[N];
+  int N_4;
+  int r_5[N];
+  int N_5;
   int id_poll[N];
   int P;
   int id_date[N];
@@ -40,17 +46,22 @@ parameters {
   
   // Covariates
   real mu[P];
-  real delta[H];
   real lambda[F];
   real beta[3];
   real nu[2];
   real<lower=0> tau_mu;
-  real<lower=0> tau_delta;
   real<lower=0> tau_lambda;
   
   // EZ and CT adjustment
   real gamma_z_tilde;
   real gamma_t_tilde;
+  
+  // Rounding error
+  real<lower=-0.005,upper=0.005> epsilon1[N_1];
+  real<lower=-0.01,upper=0.01> epsilon2[N_2];
+  real<lower=0.001,upper=0.015> epsilon3[N_3];
+  real<lower=0.001,upper=0.01> epsilon4[N_4];
+  real<lower=0.001,upper=0.005> epsilon5[N_5];
   
 }
 transformed parameters {
@@ -58,7 +69,9 @@ transformed parameters {
   real alpha[num_basis];
   real gamma_z;
   real gamma_t;
-  real <lower=0,upper=1> theta[N];
+  real<lower=0,upper=1> theta[N];
+  real<lower=-.015,upper=.015> epsilon[N];
+  real<lower=0,upper=1> vshare[N];
   
   // Spline coefficients, specified as a random walk
   // to avoid overfit
@@ -78,12 +91,13 @@ transformed parameters {
     gamma_t = 0;
   }
   
-  // Theta
+  
   for (i in 1:N) {
+    
+    // Theta
     if (id_month[i] == 1) {
       theta[i] = inv_logit(alpha0 * id_date[i] + to_row_vector(alpha) * S[,id_date[i]] + // Spline
                                   tau_mu * mu[id_poll[i]] + // Poll effect
-                                  tau_delta * delta[id_hyp[i]] + // Scenario effect
                                   tau_lambda * lambda[id_house[i]] + // House effect
                                   X[i,1] * (beta[1] + nu[1] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2] + nu[2] * (id_date[i] - 1)) +
@@ -91,7 +105,6 @@ transformed parameters {
                                   gamma_z * isn_z[i]); // EZ adjustment
     } else if (id_month[i] < 4 || id_month[i] > 5) {
       theta[i] = inv_logit(alpha0 * id_date[i] + to_row_vector(alpha) * S[,id_date[i]] + // Spline
-                                  tau_delta * delta[id_hyp[i]] + // Scenario effect
                                   tau_lambda * lambda[id_house[i]] + // House effect
                                   X[i,1] * (beta[1] + nu[1] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2] + nu[2] * (id_date[i] - 1)) +
@@ -99,13 +112,29 @@ transformed parameters {
     } else {
       theta[i] = inv_logit(alpha0 * id_date[i] + to_row_vector(alpha) * S[,id_date[i]] + // Spline
                                   tau_mu * mu[id_poll[i]] + // Poll effect
-                                  tau_delta * delta[id_hyp[i]] + // Scenario effect
                                   tau_lambda * lambda[id_house[i]] + // House effect
                                   X[i,1] * (beta[1] + nu[1] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2] + nu[2] * (id_date[i] - 1)) +
                                   X[i,3] * beta[3] +
                                   gamma_z * isn_t[i]); // CT adjustment
     }
+    
+    
+    // Rounding error
+    if (rounding_ind[i] == 1) {
+      epsilon[i] = epsilon1[r_1[i]];
+    } else if (rounding_ind[i] == 2) {
+      epsilon[i] = epsilon2[r_2[i]];
+    } else if (rounding_ind[i] == 3) {
+      epsilon[i] = epsilon3[r_3[i]];
+    } else if (rounding_ind[i] == 4) {
+      epsilon[i] = epsilon4[r_4[i]];
+    } else {
+      epsilon[i] = epsilon5[r_5[i]];
+    }
+    vshare[i] = vshare_raw[i] + epsilon[i];
+    
+    
   }
   
 }
@@ -123,10 +152,6 @@ model {
     mu ~ normal(0, 1);
     tau_mu ~ student_t(3, 0, 1);
     
-    // Scenario effect
-    delta ~ normal(0, 1);
-    tau_delta ~ normal(0, 1);
-    
     // House effect
     lambda ~ normal(0, 1);
     tau_lambda ~ student_t(3, 0, 1);
@@ -141,14 +166,8 @@ model {
   
   
   // Likelihood
-  for (i in 1:N) {
-    if (censored[i] == 1) {
-      target += beta_proportion_lccdf(bound_r[i] | theta[i], tot_eff[i]);
-    } else {
-      target += log(exp(beta_proportion_lcdf(bound_r[i] | theta[i], tot_eff[i])) -
-                          exp(beta_proportion_lcdf(bound_l[i] | theta[i], tot_eff[i])));
-    } 
-  }
+  for (i in 1:N)
+    target += beta_proportion_lpdf(vshare[i] | theta[i], tot_eff[i]);
                                        
 }
 generated quantities {
