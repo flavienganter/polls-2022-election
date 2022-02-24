@@ -108,7 +108,7 @@ data <- read_excel("PollsData.xlsx") %>%
   # Standardize distributions to account for the fact that
   # the number of candidates tested varies between and within polls
   group_by(id_hyp) %>% 
-  mutate(share = share / sum(share)) %>%
+  mutate(sum_share = sum(share)) %>%
   ungroup() %>% 
     
   # Renumber polls (to account for polls that have been removed)
@@ -121,6 +121,7 @@ data <- read_excel("PollsData.xlsx") %>%
   # are included in the estimates (all of them, only those who are certain to
   # vote, or a mix of both)
   mutate(vote_eff = round(n_t1 * n_wgt * share),
+         tot_eff = round(n_t1 * n_wgt),
          unsure_1 = scale_factor(variable = unsure)[[1]],
          unsure_2 = scale_factor(variable = unsure)[[2]],
          rolling_yes = scale_factor(variable = poll_type)) %>% 
@@ -157,11 +158,6 @@ data <- read_excel("PollsData.xlsx") %>%
          id_date = id_date_start + (id_date_end - id_date_start) / 2,
          id_month = as.numeric(format(as.Date(as.numeric(round(id_date)), origin = as.Date("2021-08-31")), "%m")),
          id_month = case_when(id_month > 8 ~ id_month - 8,  TRUE ~ id_month + 4)) %>% 
-    
-  # Correct for rounding differences in Ns
-  group_by(id_hyp) %>%
-  mutate(tot_eff = sum(vote_eff)) %>% 
-  ungroup() %>% 
     
   # Outcome variable (with censored observations set to 0)
   mutate(vshare_raw = ifelse(rounding_ind %in% c(3:5), 0, share))
@@ -231,28 +227,33 @@ save(spline_draws, file = "LatestDraws.RData")
 
 #### GET ESTIMATES ####
 
-# Import
-load("model_aggregator.RData")
-
-# Prepare draws
-
-  # Splines
-  spline_draws <- data.frame(`prob[1,1]` = rstan::extract(aggregator_model, pars = "prob[1,1]"))
-  colnames(spline_draws) <- "prob[1,1]"
-  for (i in 1:aggregator_model@par_dims[["prob"]][1]) {
-    for (j in 1:12) {
-      if (!(i == 1 & j == 1)) {
-        spline_draws <- cbind(spline_draws,
-                              `prob[i,j]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, ",", j, "]")))
-      }
-    }
+# Function to extract draws
+get_draws <- function(candidate) {
+  load(paste0("ModelOutput/model_aggregator_bycbeta_", candidate, ".RData"))
+  spline_draws <- data.frame(`prob[1]` = rstan::extract(aggregator_model, pars = "prob[1]"))
+  for (i in 2:aggregator_model@par_dims[["prob"]][1]) {
+    spline_draws <- cbind(spline_draws,
+                          `prob[i,candidate]` = rstan::extract(aggregator_model, pars = paste0("prob[", i, "]")))
   }
-  
-  # Instantaneous estimates
-  inst_draws <- data.frame(`prob[1]` = rstan::extract(aggregator_model, pars = paste0("prob[", aggregator_model@par_dims[["prob"]][1], ",1]")))
-  colnames(inst_draws) <- "prob[111,1]"
-  for (j in 2:12) inst_draws <- cbind(inst_draws, `prob[j]` = rstan::extract(aggregator_model, pars = paste0("prob[", aggregator_model@par_dims[["prob"]][1], ",", j, "]")))
-  
+  colnames(spline_draws) <- paste0("prob[", 1:aggregator_model@par_dims[["prob"]][1], ",", candidate, "]")
+  return(spline_draws)
+}
+
+# Draw data frame
+spline_draws <- get_draws(candidate = 1) %>% 
+  add_column(get_draws(candidate = 2)) %>% 
+  add_column(get_draws(candidate = 3)) %>% 
+  add_column(get_draws(candidate = 4)) %>% 
+  add_column(get_draws(candidate = 5)) %>% 
+  add_column(get_draws(candidate = 6)) %>% 
+  add_column(get_draws(candidate = 7)) %>% 
+  add_column(get_draws(candidate = 8)) %>% 
+  add_column(get_draws(candidate = 9)) %>% 
+  add_column(get_draws(candidate = 10)) %>% 
+  add_column(get_draws(candidate = 11)) %>% 
+  add_column(get_draws(candidate = 12))
+
+
 
 
 #### SPLINE PLOT ####
@@ -261,11 +262,11 @@ load("model_aggregator.RData")
 ## Prepare table for plot
 
 # Calculate statistics of interest
-plot_spline_estimates <- apply(spline_draws, 2, function(x) c(hdi(x), hdi(x, .5), median(x))) %>%
+plot_spline_estimates <- apply(spline_draws, 2, function(x) c(hdi(x), hdi(x, .9), hdi(x, .8), hdi(x, .5), median(x))) %>%
   t() %>% as.data.frame()
 
 # Rename names and columns
-names(plot_spline_estimates) <- c("lower95", "upper95", "lower50", "upper50", "median")
+names(plot_spline_estimates) <- c("lower95", "upper95", "lower90", "upper90", "lower80", "upper80", "lower50", "upper50", "median")
 plot_spline_estimates$coef <- row.names(plot_spline_estimates)
 
 # Name estimates: identify the date and candidate associated with each estimate
@@ -412,39 +413,15 @@ ggsave(poll_plot, filename = "PollsFrance2022_evolution.png",
 
 
 ## Prepare table for plot
-
-# Calculate statistics of interest
-plot_inst_estimates <- apply(inst_draws, 2, function(x) c(hdi(x), hdi(x, .9), hdi(x, .8), hdi(x, .5), median(x))) %>%
-  t() %>% as.data.frame()
-
-# Rename names and columns
-names(plot_inst_estimates) <- c("lower95", "upper95", "lower90", "upper90", "lower80", "upper80", "lower50", "upper50", "median")
-plot_inst_estimates$coef <- row.names(plot_inst_estimates)
-
-# Name estimates: identify the date and candidate associated with each estimate
-plot_inst_estimates <- plot_inst_estimates %>%
+plot_inst_estimates <- plot_spline_estimates %>% 
+  filter(date == max(date))  %>%
   mutate(label = paste0(unlist(lapply(median*100, round2)), "%"),
-         label = ifelse(label == "0.5%", "   0.5%", label),
-         candidate = substr(coef, 10, 11),
-         candidate = case_when(substr(candidate, 2, 2) == "]" ~ substr(candidate, 1, 1),
-                               TRUE ~ candidate),
-         candidate = as.factor(case_when(candidate == 1 ~ "Nathalie Arthaud",
-                                         candidate == 2 ~ "Nicolas Dupont-Aignan",
-                                         candidate == 3 ~ "Anne Hidalgo",
-                                         candidate == 4 ~ "Yannick Jadot",
-                                         candidate == 5 ~ "Marine Le Pen",
-                                         candidate == 6 ~ "Emmanuel Macron",
-                                         candidate == 7 ~ "Jean-Luc Mélenchon",
-                                         candidate == 8 ~ "Valérie Pécresse",
-                                         candidate == 9 ~ "Philippe Poutou",
-                                         candidate == 10 ~ "Fabien Roussel",
-                                         candidate == 11 ~ "Eric Zemmour",
-                                         candidate == 12 ~ "Christiane Taubira")))
+         label = ifelse(label == "0.5%", "   0.5%", label))
 plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
-                                             levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Eric Zemmour", 
-                                                        "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
-                                                        "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
-                                                        "Yannick Jadot")[c(3, 7, 4, 11, 6, 12, 5, 2, 1, 9, 10, 8)])
+                                        levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Éric Zemmour", 
+                                                   "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
+                                                   "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
+                                                   "Yannick Jadot")[c(3, 7, 4, 11, 6, 12, 5, 2, 1, 9, 10, 8)])
 
 
 ## Create plot
@@ -464,7 +441,7 @@ inst_plot <- plot_inst_estimates %>%
   geom_linerange(aes(ymin = lower95 * 100, ymax = upper95 * 100), alpha = .2, size = 10) +
   geom_linerange(aes(ymin = median * 100 - .05, ymax = median * 100 + .05), size = 12, color = "white") +
   geom_linerange(aes(ymin = median * 100 - .02, ymax = median * 100 + .02), size = 11) +
-  geom_text(aes(label = label, y = median * 100), family = "Open Sans Condensed SemiBold", vjust = -1.65) +
+  geom_text(aes(label = label, y = median*100), family = "Open Sans Condensed SemiBold", vjust = -1.65) +
   
   # Define labs
   labs(x = "", y = "Intentions de votes (% votes exprimés)",

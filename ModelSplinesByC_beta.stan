@@ -5,6 +5,7 @@ data {
   int id_cand;
   int tot_eff[N];
   real<lower=0,upper=1> vshare_raw[N];
+  real sum_share[N];
   int rounding_ind[N];
   int r_1[N];
   int N_1;
@@ -132,7 +133,7 @@ transformed parameters {
     } else {
       epsilon[i] = epsilon5[r_5[i]];
     }
-    vshare[i] = vshare_raw[i] + epsilon[i];
+    vshare[i] = (vshare_raw[i] + epsilon[i]) / sum_share[i];
     
     
   }
