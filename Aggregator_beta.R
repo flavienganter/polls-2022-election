@@ -2,7 +2,7 @@
 # Flavien Ganter
 
 # Created on October 4, 2021
-# Last modified on February 18, 2022
+# Last modified on March 2, 2022
 
 
 
@@ -130,8 +130,8 @@ data <- read_excel("PollsData.xlsx") %>%
     ## Estimates for these candidates are very noisy, and not
     ## necessarily relevant. Omitting then does not affect the
     ## estimation for other candidates
-  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_lassalle", "c_poisson", "c_montebourg",
-                           "c_philippot", "c_thouy")) %>% 
+  filter(candidate %nin% c("c_asselineau", "c_lagarde", "c_poisson", "c_montebourg",
+                           "c_philippot", "c_thouy", "c_taubira")) %>% 
   
   # Create a candidate ID
   mutate(id_candidate = case_when(candidate == "c_arthaud" ~ 1,
@@ -144,8 +144,8 @@ data <- read_excel("PollsData.xlsx") %>%
                                   candidate == "c_pecresse" ~ 8,
                                   candidate == "c_poutou" ~ 9,
                                   candidate == "c_roussel" ~ 10,
-                                  candidate == "c_zemmour" ~ 11,
-                                  candidate == "c_taubira" ~ 12)) %>% 
+                                  candidate == "c_lassalle" ~ 11,
+                                  candidate == "c_zemmour" ~ 12)) %>% 
   
   # Create a house ID
   group_by(house) %>% 
@@ -291,15 +291,14 @@ plot_spline_estimates <- plot_spline_estimates %>%
                                          candidate == 8 ~ "Valérie Pécresse",
                                          candidate == 9 ~ "Philippe Poutou",
                                          candidate == 10 ~ "Fabien Roussel",
-                                         candidate == 11 ~ "Éric Zemmour",
-                                         candidate == 12 ~ "Christiane Taubira"))) %>% 
-  filter(candidate != "Christiane Taubira" | (candidate == "Christiane Taubira" & date >= "2021-12-15"))
+                                         candidate == 11 ~ "Jean Lassalle",
+                                         candidate == 12 ~ "Éric Zemmour")))
 
 
 ## Create plot
 
 # Define candidate colors
-candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
+candidate_colors <- c("#f7b4b4", "#ff6600", "black", "#ff1300", "#FFCC33", "#b30d00",
                       "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")
 
 # Generate plot
@@ -308,11 +307,11 @@ poll_plot <- plot_spline_estimates %>%
          median_label = case_when(candidate == "Anne Hidalgo" ~ median - .00,
                                   candidate == "Fabien Roussel" ~ median + .00,
                                   candidate == "Nicolas Dupont-Aignan" ~ median - .00,
-                                  candidate == "Philippe Poutou" ~ median + .0015,
-                                  candidate == "Nathalie Arthaud" ~ median - .0015,
+                                  candidate == "Philippe Poutou" ~ median + .00,
+                                  candidate == "Nathalie Arthaud" ~ median - .00,
                                   candidate == "Jean-Luc Mélenchon" ~ median,
                                   candidate == "Yannick Jadot" ~ median + .00,
-                                  candidate == "Christiane Taubira" ~ median - .00,
+                                  candidate == "Jean Lassalle" ~ median - .00,
                                   candidate == "Marine Le Pen" ~ median + .00,
                                   candidate == "Valérie Pécresse" ~ median + .00,
                                   candidate == "Éric Zemmour" ~ median - .00,
@@ -418,17 +417,17 @@ plot_inst_estimates <- plot_spline_estimates %>%
   mutate(label = paste0(unlist(lapply(median*100, round2)), "%"),
          label = ifelse(label == "0.5%", "   0.5%", label))
 plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
-                                        levels = c("Anne Hidalgo", "Christiane Taubira", "Emmanuel Macron", "Éric Zemmour", 
+                                        levels = c("Anne Hidalgo", "Emmanuel Macron", "Éric Zemmour", "Jean Lassalle",
                                                    "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
                                                    "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
-                                                   "Yannick Jadot")[c(3, 7, 4, 11, 6, 12, 5, 2, 1, 9, 10, 8)])
+                                                   "Yannick Jadot")[c(2, 7, 3, 11, 6, 12, 5, 1, 9, 4, 10, 8)])
 
 
 ## Create plot
 
 # Define candidate colors
-candidate_colors <- c("#f7b4b4", "#FFCC33", "#ff6600", "black", "#ff1300", "#b30d00",
-                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(3, 7, 4, 11, 6, 12, 5, 2, 1, 9, 10, 8)]
+candidate_colors <- c("#f7b4b4", "#ff6600", "black", "#FFCC33", "#ff1300", "#b30d00",
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(2, 7, 3, 11, 6, 12, 5, 1, 9, 4, 10, 8)]
 
 # Generate plot
 inst_plot <- plot_inst_estimates %>% 
@@ -475,7 +474,7 @@ inst_plot <- plot_inst_estimates %>%
   scale_fill_manual(values = candidate_colors) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 27))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 28))
 
 
 ## Export plot

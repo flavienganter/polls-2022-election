@@ -27,7 +27,7 @@ data {
   
   // EZ and CT adjustement
   int isn_z[N];
-  int isn_t[N];
+  int is_t[N];
   
   // Splines
   int num_knots;
@@ -81,15 +81,12 @@ transformed parameters {
     alpha[i] = alpha[i-1] + alpha_raw[i] * tau_alpha;
   
   // EZ and CT adjustment
-  if (id_cand < 11) {
+  if (id_cand < 12) {
     gamma_z = gamma_z_tilde;
-    gamma_t = gamma_t_tilde;
-  } else if (id_cand == 11) {
-    gamma_z = 0;
     gamma_t = gamma_t_tilde;
   } else {
     gamma_z = 0;
-    gamma_t = 0;
+    gamma_t = gamma_t_tilde;
   }
   
   
@@ -117,7 +114,7 @@ transformed parameters {
                                   X[i,1] * (beta[1] + nu[1] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2] + nu[2] * (id_date[i] - 1)) +
                                   X[i,3] * beta[3] +
-                                  gamma_z * isn_t[i]); // CT adjustment
+                                  gamma_t * is_t[i]); // CT adjustment
     }
     
     
