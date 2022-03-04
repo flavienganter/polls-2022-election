@@ -474,7 +474,7 @@ inst_plot <- plot_inst_estimates %>%
   scale_fill_manual(values = candidate_colors) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 28))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 29))
 
 
 ## Export plot
