@@ -349,15 +349,15 @@ poll_plot <- plot_spline_estimates %>%
             hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed", size = 3) +
   
   # Show latest poll's date
-  annotate("segment", x = max(plot_spline_estimates$date), y = 0, xend = max(plot_spline_estimates$date), yend = 28,
+  annotate("segment", x = max(plot_spline_estimates$date), y = 0, xend = max(plot_spline_estimates$date), yend = 29,
            size = .4) +
-  annotate(geom = "text", x = max(plot_spline_estimates$date), y = 28.5, family = "Open Sans Condensed",
+  annotate(geom = "text", x = max(plot_spline_estimates$date), y = 29.5, family = "Open Sans Condensed",
            label = format(max(plot_spline_estimates$date), "%d %B %Y"), size = 3) +
   
   # Show 1st round
-  annotate("segment", x = as.Date("2022-04-10"), y = 0, xend = as.Date("2022-04-10"), yend = 27,
+  annotate("segment", x = as.Date("2022-04-10"), y = 0, xend = as.Date("2022-04-10"), yend = 28,
            size = .4) +
-  annotate(geom = "text", x = as.Date("2022-04-10"), y = 28, family = "Open Sans Condensed",
+  annotate(geom = "text", x = as.Date("2022-04-10"), y = 29, family = "Open Sans Condensed",
            label = "Premier tour \n10 avril 2022", size = 3) +
   
   # Define labs
@@ -396,7 +396,7 @@ poll_plot <- plot_spline_estimates %>%
                limits = c(as.Date("2021-09-01"), as.Date("2022-04-15"))) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 29))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 30))
 
 
 ## Export plot
@@ -474,7 +474,7 @@ inst_plot <- plot_inst_estimates %>%
   scale_fill_manual(values = candidate_colors) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 29))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 30))
 
 
 ## Export plot
