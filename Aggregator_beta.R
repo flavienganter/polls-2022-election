@@ -420,14 +420,14 @@ plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
                                         levels = c("Anne Hidalgo", "Emmanuel Macron", "Éric Zemmour", "Jean Lassalle",
                                                    "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
                                                    "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
-                                                   "Yannick Jadot")[c(2, 7, 6, 11, 3, 12, 5, 1, 9, 4, 10, 8)])
+                                                   "Yannick Jadot")[c(2, 7, 6, 3, 11, 12, 5, 1, 4, 9, 10, 8)])
 
 
 ## Create plot
 
 # Define candidate colors
 candidate_colors <- c("#f7b4b4", "#ff6600", "black", "#FFCC33", "#ff1300", "#b30d00",
-                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(2, 7, 6, 11, 3, 12, 5, 1, 9, 4, 10, 8)]
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(2, 7, 6, 3, 11, 12, 5, 1, 4, 9, 10, 8)]
 
 # Generate plot
 inst_plot <- plot_inst_estimates %>% 
