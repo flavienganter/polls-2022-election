@@ -349,15 +349,15 @@ poll_plot <- plot_spline_estimates %>%
             hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed", size = 3) +
   
   # Show latest poll's date
-  annotate("segment", x = max(plot_spline_estimates$date), y = 0, xend = max(plot_spline_estimates$date), yend = 34,
+  annotate("segment", x = max(plot_spline_estimates$date), y = 0, xend = max(plot_spline_estimates$date), yend = 33,
            size = .4) +
-  annotate(geom = "text", x = max(plot_spline_estimates$date), y = 34.5, family = "Open Sans Condensed",
+  annotate(geom = "text", x = max(plot_spline_estimates$date), y = 33.5, family = "Open Sans Condensed",
            label = format(max(plot_spline_estimates$date), "%d %B %Y"), size = 3) +
   
   # Show 1st round
-  annotate("segment", x = as.Date("2022-04-10"), y = 0, xend = as.Date("2022-04-10"), yend = 33,
+  annotate("segment", x = as.Date("2022-04-10"), y = 0, xend = as.Date("2022-04-10"), yend = 31.75,
            size = .4) +
-  annotate(geom = "text", x = as.Date("2022-04-10"), y = 34, family = "Open Sans Condensed",
+  annotate(geom = "text", x = as.Date("2022-04-10"), y = 33, family = "Open Sans Condensed",
            label = "Premier tour \n10 avril 2022", size = 3) +
   
   # Define labs
@@ -396,7 +396,7 @@ poll_plot <- plot_spline_estimates %>%
                limits = c(as.Date("2021-09-01"), as.Date("2022-04-15"))) +
   
   # Percent axis
-  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 35, 5), lim = c(0, 35))
+  scale_y_continuous(labels = function(x) paste0(x, "%"), expand = c(0, 0), breaks = seq(0, 30, 5), lim = c(0, 34))
 
 
 ## Export plot
@@ -417,17 +417,17 @@ plot_inst_estimates <- plot_spline_estimates %>%
   mutate(label = paste0(unlist(lapply(median*100, round2)), "%"),
          label = ifelse(label == "0.5%", "   0.5%", label))
 plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
-                                        levels = c("Anne Hidalgo", "Emmanuel Macron", "Éric Zemmour", "Jean Lassalle",
-                                                   "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
-                                                   "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
-                                                   "Yannick Jadot")[c(2, 7, 6, 3, 11, 12, 5, 1, 4, 9, 10, 8)])
-
+                                        levels = as.vector(plot_inst_estimates$candidate[rev(order(plot_inst_estimates$median))]))
 
 ## Create plot
 
 # Define candidate colors
 candidate_colors <- c("#f7b4b4", "#ff6600", "black", "#FFCC33", "#ff1300", "#b30d00",
-                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[c(2, 7, 6, 3, 11, 12, 5, 1, 4, 9, 10, 8)]
+                      "#002060", "#8fa02a", "#7030a0", "#c80589", "#0070c0", "#00b050")[match(as.vector(plot_inst_estimates$candidate[rev(order(plot_inst_estimates$median))]),
+                                                                                              c("Anne Hidalgo", "Emmanuel Macron", "Éric Zemmour", "Jean Lassalle",
+                                                                                                "Fabien Roussel", "Jean-Luc Mélenchon", "Marine Le Pen", "Nathalie Arthaud", 
+                                                                                                "Nicolas Dupont-Aignan", "Philippe Poutou", "Valérie Pécresse", 
+                                                                                                "Yannick Jadot"))]
 
 # Generate plot
 inst_plot <- plot_inst_estimates %>% 
