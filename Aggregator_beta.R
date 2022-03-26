@@ -192,7 +192,7 @@ save(data, file = "PollsData.RData")
 if (0) { # Model run in a separate cluster
 
 # Define splines 
-num_knots     <- 10
+num_knots     <- 12
 spline_degree <- 3
 num_basis     <- num_knots + spline_degree - 1
 B             <- t(bs(1:max(data$id_date), df = num_basis, degree = spline_degree, intercept = TRUE))
@@ -625,8 +625,8 @@ inst_plot <- plot_inst_estimates %>%
   # Percent axis
   scale_y_continuous(labels = function(x) paste0(x, "%"), 
                      expand = c(0, 0), 
-                     breaks = seq(0, 35, 5), 
-                     lim = c(0, 35))
+                     breaks = seq(0, 30, 5), 
+                     lim = c(0, 30))
 
 
 ## Export plot
