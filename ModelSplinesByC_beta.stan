@@ -103,6 +103,7 @@ transformed parameters {
                                   gamma_z * isn_z[i]); // EZ adjustment
     } else if (id_month[i] < 4 || id_month[i] > 5) {
       theta[i] = inv_logit(alpha0 * id_date[i] + to_row_vector(alpha) * S[,id_date[i]] + // Spline
+                                  tau_mu * mu[id_poll[i]] + // Poll effect
                                   tau_lambda * lambda[id_house[i]] + // House effect
                                   X[i,1] * (beta[1] + nu[1] * (id_date[i] - 1)) + // Population definition and poll type effects
                                   X[i,2] * (beta[2] + nu[2] * (id_date[i] - 1)) +
