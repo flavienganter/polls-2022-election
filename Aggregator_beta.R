@@ -400,7 +400,7 @@ poll_plot <- plot_spline_estimates %>%
               size = 0) +
   
   # Candidate labels
-  geom_text(aes(x = date + 1, y = median_label * 100, label = label), na.rm = TRUE,
+  geom_text(aes(x = as.Date("2022-04-11"), y = median_label * 100, label = label), na.rm = TRUE,
             hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed", size = 3) +
   
   # Show latest poll's date
@@ -408,11 +408,11 @@ poll_plot <- plot_spline_estimates %>%
            x = max(plot_spline_estimates$date), 
            y = 0, 
            xend = max(plot_spline_estimates$date), 
-           yend = 33,
+           yend = 32,
            size = .4) +
   annotate(geom = "text", 
            x = max(plot_spline_estimates$date), 
-           y = 33.5, 
+           y = 32.5, 
            label = format(max(plot_spline_estimates$date), "%d %B %Y"), 
            family = "Open Sans Condensed",
            size = 3) +
@@ -420,13 +420,14 @@ poll_plot <- plot_spline_estimates %>%
   # Show 1st round
   annotate("segment",
            x = as.Date("2022-04-10"), 
-           y = 0, xend = as.Date("2022-04-10"), 
-           yend = 31.75,
+           y = 0, 
+           xend = as.Date("2022-04-10"), 
+           yend = 30.5,
            size = .4) +
   annotate(geom = "text", 
            x = as.Date("2022-04-10"), 
-           y = 33, 
-           label = "Premier tour \n10 avril 2022", 
+           y = 31, 
+           label = "Premier tour", 
            family = "Open Sans Condensed",
            size = 3) +
   
@@ -473,15 +474,16 @@ poll_plot <- plot_spline_estimates %>%
   # Date axis
   scale_x_date(expand = c(.005,1), 
                date_breaks = "1 month",
-               date_labels = c("Avril", 
+               date_labels = c("Mai", 
                                "Septembre", 
                                "Octobre", 
                                "Novembre", 
                                "Décembre", 
                                "Janvier", 
                                "Février", 
-                               "Mars"),
-               limits = c(as.Date("2021-09-01"), as.Date("2022-04-15"))) +
+                               "Mars",
+                               "Avril"),
+               limits = c(as.Date("2021-09-01"), as.Date("2022-05-01"))) +
   
   # Percent axis
   scale_y_continuous(labels = function(x) paste0(x, "%"), 
