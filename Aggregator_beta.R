@@ -171,8 +171,8 @@ data <- read_excel("PollsData.xlsx") %>%
   ungroup() %>% 
     
   # Create date IDs
-  mutate(id_date_start = as.numeric(as.Date(paste(year, month_start, day_start, sep = "-"))) - 18869,
-         id_date_end = as.numeric(as.Date(paste(year, month_end, day_end, sep = "-"))) - 18869,
+  mutate(id_date_start = as.numeric(as.Date(paste(year, month_start, day_start, sep = "-"))) - 18870,
+         id_date_end = as.numeric(as.Date(paste(year, month_end, day_end, sep = "-"))) - 18870,
          id_date = id_date_start + (id_date_end - id_date_start) / 2,
          id_month = as.numeric(format(as.Date(as.numeric(round(id_date)), 
                                               origin = as.Date("2021-08-31")), "%m")),
