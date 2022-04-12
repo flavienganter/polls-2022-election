@@ -1,12 +1,12 @@
 # A Poll Aggregator for the 2022 French Presidential Election
 
-Current estimates of the voting intentions for the first round of the 2022 French Presidential Election (medians of the posterior distributions, and 95%, 90%, 80%, and 50% high density credible intervals):
+Estimates of the voting intentions for the first round of the 2022 French Presidential Election (medians of the posterior distributions, and 95%, 90%, 80%, and 50% high density credible intervals) on April 8, 2022, two days before the first round:
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_latest.png?raw=true)
 
-Evolutions of voting intentions since September 2021 (medians of the posterior distributions, and 95% and 50% high density credible intervals):
+Evolutions of voting intentions since September 2021 (medians of the posterior distributions, and 95% and 50% high density credible intervals) and official results:
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_evolution.png?raw=true)
+![](https://github.com/flavienganter/polls-2022-election/blob/main/PollsFrance2022_evolution_final.png?raw=true)
 
 ## Model
 
