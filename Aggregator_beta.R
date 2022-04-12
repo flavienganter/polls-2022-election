@@ -264,6 +264,61 @@ spline_draws <- get_draws(candidate = 1) %>%
   add_column(get_draws(candidate = 12))
 
 
+## Get official results ----
+
+results <- data.frame(candidate = 1:12,
+                      score = c(.0056,
+                                .0206,
+                                .0175,
+                                .0463,
+                                .2315,
+                                .2785,
+                                .2195,
+                                .0478,
+                                .0077,
+                                .0228,
+                                .0313,
+                                .0707)) %>% 
+  mutate(label_candidate = as.factor(case_when(candidate == 1 ~ "Arthaud",
+                                               candidate == 2 ~ "Dupont-Aignan",
+                                               candidate == 3 ~ "Hidalgo",
+                                               candidate == 4 ~ "Jadot",
+                                               candidate == 5 ~ "Le Pen",
+                                               candidate == 6 ~ "Macron",
+                                               candidate == 7 ~ "Mélenchon",
+                                               candidate == 8 ~ "Pécresse",
+                                               candidate == 9 ~ "Poutou",
+                                               candidate == 10 ~ "Roussel",
+                                               candidate == 11 ~ "Lassalle",
+                                               candidate == 12 ~ "Zemmour")),
+         candidate = as.factor(case_when(candidate == 1 ~ "Nathalie Arthaud",
+                                         candidate == 2 ~ "Nicolas Dupont-Aignan",
+                                         candidate == 3 ~ "Anne Hidalgo",
+                                         candidate == 4 ~ "Yannick Jadot",
+                                         candidate == 5 ~ "Marine Le Pen",
+                                         candidate == 6 ~ "Emmanuel Macron",
+                                         candidate == 7 ~ "Jean-Luc Mélenchon",
+                                         candidate == 8 ~ "Valérie Pécresse",
+                                         candidate == 9 ~ "Philippe Poutou",
+                                         candidate == 10 ~ "Fabien Roussel",
+                                         candidate == 11 ~ "Jean Lassalle",
+                                         candidate == 12 ~ "Éric Zemmour")),
+         candidate_final = candidate,
+         label = paste0(as.character(label_candidate), " (",
+                                unlist(lapply(score*100, round, 1)), "%)"),
+         label_score = paste0(unlist(lapply(score*100, round, 1)), "%"),
+         score_pos = case_when(candidate == "Anne Hidalgo" ~ score + .0005,
+                                  candidate == "Fabien Roussel" ~ score + .009,
+                                  candidate == "Nicolas Dupont-Aignan" ~ score + .0045,
+                                  candidate == "Philippe Poutou" ~ score + .003,
+                                  candidate == "Nathalie Arthaud" ~ score - .002,
+                                  candidate == "Jean-Luc Mélenchon" ~ score,
+                                  candidate == "Yannick Jadot" ~ score - .001,
+                                  candidate == "Jean Lassalle" ~ score + .008,
+                                  candidate == "Valérie Pécresse" ~ score + .005,
+                                  !is.na(candidate) ~ score))
+
+
 ## Evolution plot ----
 
 ### Prepare table for plot
@@ -318,20 +373,20 @@ plot_spline_estimates <- plot_spline_estimates %>%
 ### Create plot
 
 # Define candidate colors
-candidate_colors <- c("#f7b4b4", 
+candidate_colors <- c("#f7b4b4",
                       "#ff6600",
-                      "black", 
-                      "#ff1300", 
-                      "#FFCC33", 
+                      "#5b3c11",
+                      "#c80589",
+                      "gray60", 
                       "#b30d00",
-                      "#002060", 
-                      "#8fa02a", 
-                      "#7030a0", 
-                      "#c80589", 
-                      "#0070c0", 
+                      "black",  
+                      "#c23e45",
+                      "#002060",
+                      "#ff1300",
+                      "#0070c0",
                       "#00b050")
 
-# Generate plot
+# Generate plot: day to day
 poll_plot <- plot_spline_estimates %>% 
   mutate(label_candidate = case_when(candidate == "Anne Hidalgo" ~ "Hidalgo",
                                      candidate == "Fabien Roussel" ~ "Roussel",
@@ -349,17 +404,12 @@ poll_plot <- plot_spline_estimates %>%
                          paste0(as.character(label_candidate), " (",
                                 unlist(lapply(median*100, round2)), "%)"),
                          NA_character_),
-         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .00,
-                                  candidate == "Fabien Roussel" ~ median + .00,
-                                  candidate == "Nicolas Dupont-Aignan" ~ median - .002,
+         median_label = case_when(candidate == "Anne Hidalgo" ~ median - .004,
+                                  candidate == "Fabien Roussel" ~ median + .008,
+                                  candidate == "Nicolas Dupont-Aignan" ~ median - .001,
                                   candidate == "Philippe Poutou" ~ median + .00,
-                                  candidate == "Nathalie Arthaud" ~ median - .00,
-                                  candidate == "Jean-Luc Mélenchon" ~ median,
-                                  candidate == "Yannick Jadot" ~ median + .00,
-                                  candidate == "Jean Lassalle" ~ median + .002,
-                                  candidate == "Marine Le Pen" ~ median + .00,
-                                  candidate == "Valérie Pécresse" ~ median + .00,
-                                  candidate == "Éric Zemmour" ~ median - .00,
+                                  candidate == "Nathalie Arthaud" ~ median - .002,
+                                  candidate == "Jean Lassalle" ~ median + .003,
                                   !is.na(candidate) ~ median)) %>% 
   group_by(candidate) %>% 
   mutate(lower50_l = zoo::rollmean(lower50, k = 2, align = "left", fill = NA),
@@ -400,22 +450,15 @@ poll_plot <- plot_spline_estimates %>%
               size = 0) +
   
   # Candidate labels
-  geom_text(aes(x = as.Date("2022-04-11"), y = median_label * 100, label = label), na.rm = TRUE,
-            hjust = 0, vjust = 0, nudge_y = -.1, family = "Open Sans Condensed", size = 3) +
-  
-  # Show latest poll's date
-  annotate("segment", 
-           x = max(plot_spline_estimates$date), 
-           y = 0, 
-           xend = max(plot_spline_estimates$date), 
-           yend = 32,
-           size = .4) +
-  annotate(geom = "text", 
-           x = max(plot_spline_estimates$date), 
-           y = 32.5, 
-           label = format(max(plot_spline_estimates$date), "%d %B %Y"), 
-           family = "Open Sans Condensed",
-           size = 3) +
+  geom_text(aes(x = as.Date("2022-04-11"), 
+                y = median_label * 100, 
+                label = label), 
+            na.rm = TRUE,
+            hjust = 0, 
+            vjust = 0, 
+            nudge_y = -.1, 
+            family = "Open Sans Condensed", 
+            size = 3) +
   
   # Show 1st round
   annotate("segment",
@@ -436,7 +479,8 @@ poll_plot <- plot_spline_estimates %>%
        y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
        subtitle = "Depuis septembre 2021",
-       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Kantar, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'un modèle bayésien tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Dernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Kantar, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'un modèle bayésien tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Dernière mise à jour: 8 avril 2022.")) +
+       #caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Kantar, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'un modèle bayésien tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Dernière mise à jour: ", format(Sys.time(), "%d %B %Y"), ".")) +
   
   # Specify plot theme
   theme_minimal() +
@@ -460,6 +504,7 @@ poll_plot <- plot_spline_estimates %>%
                                   family = "Open Sans Condensed ExtraBold", 
                                   face = "bold"),
         plot.title.position = "plot",
+        plot.subtitle = element_text(size = 12),
         legend.position = "none",
         plot.caption = element_text(color = "gray30", 
                                     hjust = 0, 
@@ -483,13 +528,162 @@ poll_plot <- plot_spline_estimates %>%
                                "Février", 
                                "Mars",
                                "Avril"),
-               limits = c(as.Date("2021-09-01"), as.Date("2022-05-01"))) +
+               limits = c(as.Date("2021-09-01"), as.Date("2022-05-04"))) +
   
   # Percent axis
   scale_y_continuous(labels = function(x) paste0(x, "%"), 
                      expand = c(0, 0), 
                      breaks = seq(0, 30, 5), 
-                     lim = c(0, 34))
+                     lim = c(0, 32))
+
+
+# Generate plot: final
+poll_plot_final <- plot_spline_estimates %>% 
+  mutate(label_candidate = case_when(candidate == "Anne Hidalgo" ~ "Hidalgo",
+                                     candidate == "Fabien Roussel" ~ "Roussel",
+                                     candidate == "Nicolas Dupont-Aignan" ~ "Dupont-Aignan",
+                                     candidate == "Philippe Poutou" ~ "Poutou",
+                                     candidate == "Nathalie Arthaud" ~ "Arthaud",
+                                     candidate == "Jean-Luc Mélenchon" ~ "Mélenchon",
+                                     candidate == "Yannick Jadot" ~ "Jadot",
+                                     candidate == "Jean Lassalle" ~ "Lassalle",
+                                     candidate == "Marine Le Pen" ~ "Le Pen",
+                                     candidate == "Valérie Pécresse" ~ "Pécresse",
+                                     candidate == "Éric Zemmour" ~ "Zemmour",
+                                     candidate == "Emmanuel Macron" ~ "Macron"),
+         label = if_else(date == max(date), 
+                         paste0(as.character(label_candidate), " (",
+                                unlist(lapply(median*100, round2)), "%)"),
+                         NA_character_)) %>% 
+  group_by(candidate) %>% 
+  mutate(lower50_l = zoo::rollmean(lower50, k = 2, align = "left", fill = NA),
+         lower50_r = zoo::rollmean(lower50, k = 2, align = "right", fill = NA),
+         upper50_l = zoo::rollmean(upper50, k = 2, align = "left", fill = NA),
+         upper50_r = zoo::rollmean(upper50, k = 2, align = "right", fill = NA),
+         lower95_l = zoo::rollmean(lower95, k = 2, align = "left", fill = NA),
+         lower95_r = zoo::rollmean(lower95, k = 2, align = "right", fill = NA),
+         upper95_l = zoo::rollmean(upper95, k = 2, align = "left", fill = NA),
+         upper95_r = zoo::rollmean(upper95, k = 2, align = "right", fill = NA),
+         lower50_s = zoo::rollmean(lower50, k = 3, fill = NA),
+         upper50_s = zoo::rollmean(upper50, k = 3, fill = NA),
+         lower95_s = zoo::rollmean(lower95, k = 3, fill = NA),
+         upper95_s = zoo::rollmean(upper95, k = 3, fill = NA),
+         lower50_s = ifelse(is.na(lower50_s), lower50_l, lower50_s),
+         lower50_s = ifelse(is.na(lower50_s), lower50_r, lower50_s),
+         upper50_s = ifelse(is.na(upper50_s), upper50_l, upper50_s),
+         upper50_s = ifelse(is.na(upper50_s), upper50_r, upper50_s),
+         lower95_s = ifelse(is.na(lower95_s), lower95_l, lower95_s),
+         lower95_s = ifelse(is.na(lower95_s), lower95_r, lower95_s),
+         upper95_s = ifelse(is.na(upper95_s), upper95_l, upper95_s),
+         upper95_s = ifelse(is.na(upper95_s), upper95_r, upper95_s)) %>% 
+  ggplot(aes(x = date, 
+             group = candidate, 
+             color = candidate)) +
+  
+  # Plot data
+  geom_line(aes(y = median * 100)) +
+  geom_ribbon(aes(ymin = lower50_s * 100, 
+                  ymax = upper50_s * 100, 
+                  fill = candidate), 
+              alpha = .1, 
+              size = 0) +
+  geom_ribbon(aes(ymin = lower95_s * 100, 
+                  ymax = upper95_s * 100, 
+                  fill = candidate), 
+              alpha = .1, 
+              size = 0) +
+  
+  # Candidate labels
+  geom_text(data = results,
+            aes(x = as.Date("2022-04-12"), 
+                y = score_pos * 100 - .1, 
+                label = label), 
+            na.rm = TRUE,
+            hjust = 0, 
+            vjust = 0, 
+            nudge_y = -.1, 
+            family = "Open Sans Condensed", 
+            size = 3) +
+
+  # Show 1st round
+  annotate("segment",
+           x = as.Date("2022-04-10"), 
+           y = 0, 
+           xend = as.Date("2022-04-10"), 
+           yend = 30.5,
+           size = .4) +
+  annotate(geom = "text", 
+           x = as.Date("2022-04-10"), 
+           y = 31, 
+           label = "Premier tour", 
+           family = "Open Sans Condensed",
+           size = 3) +
+  
+  # Show official results
+  geom_point(data = results,
+             aes(x = as.Date("2022-04-10"), 
+                 y = score * 100)) +
+  
+  # Define labs
+  labs(x = "", 
+       y = "Intentions de votes (% votes exprimés)",
+       title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
+       subtitle = "Depuis septembre 2021",
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Kantar, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à l'aide d'un modèle bayésien tenant compte \ndes principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 50%)Pour chaque candidat, la ligne solide relie les médianes des distributions a posteriori à chaque date, et la zone colorée représente la partie la plus dense de la distribution a posteriori (95% / 50%) des \ndistributions a posteriori. Les points au jour du premier tour représentent les résultats officiels.")) +
+  
+  # Specify plot theme
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "#2b2b2b", 
+                                          linetype = "dotted", 
+                                          size = 0.05),
+        text = element_text(family = "Open Sans Condensed", 
+                            size = 7.5),
+        axis.text = element_text(size = 8),
+        axis.text.x = element_text(hjust = 0),
+        axis.text.y = element_text(margin = margin(r = -2)),
+        axis.title = element_blank(),
+        axis.line.x = element_line(color = "#2b2b2b", 
+                                   size = 0.15),
+        axis.ticks.x = element_line(color = "#2b2b2b", 
+                                    size = 0.15),
+        axis.ticks.length = unit(.2, "cm"),
+        plot.title = element_text(size = 20, 
+                                  family = "Open Sans Condensed ExtraBold", 
+                                  face = "bold"),
+        plot.title.position = "plot",
+        plot.subtitle = element_text(size = 12),
+        legend.position = "none",
+        plot.caption = element_text(color = "gray30", 
+                                    hjust = 0, 
+                                    margin = margin(t = 15)),
+        plot.margin = unit(rep(0.5, 4), "cm")) +
+  
+  # Candidate colors
+  guides(color = guide_legend(nrow = 3, byrow = TRUE)) +
+  scale_colour_manual(values = candidate_colors) +
+  scale_fill_manual(values = candidate_colors) +
+  
+  # Date axis
+  scale_x_date(expand = c(.005,1), 
+               date_breaks = "1 month",
+               date_labels = c("Mai", 
+                               "Septembre", 
+                               "Octobre", 
+                               "Novembre", 
+                               "Décembre", 
+                               "Janvier", 
+                               "Février", 
+                               "Mars",
+                               "Avril"),
+               limits = c(as.Date("2021-09-01"), as.Date("2022-05-04"))) +
+  
+  # Percent axis
+  scale_y_continuous(labels = function(x) paste0(x, "%"), 
+                     expand = c(0, 0), 
+                     breaks = seq(0, 30, 5), 
+                     lim = c(0, 32))
 
 
 ## Export plot
@@ -500,6 +694,17 @@ ggsave(poll_plot,
        device = cairo_pdf)
 ggsave(poll_plot, 
        filename = "PollsFrance2022_evolution.png",
+       height = 6, 
+       width = 10, 
+       device = "png", 
+       bg = "white")
+ggsave(poll_plot_final, 
+       filename = "PollsFrance2022_evolution_final.pdf",
+       height = 6, 
+       width = 10, 
+       device = cairo_pdf)
+ggsave(poll_plot_final, 
+       filename = "PollsFrance2022_evolution_final.png",
        height = 6, 
        width = 10, 
        device = "png", 
@@ -517,28 +722,31 @@ plot_inst_estimates <- plot_spline_estimates %>%
 plot_inst_estimates$candidate <- factor(plot_inst_estimates$candidate,
                                         levels = as.vector(plot_inst_estimates$candidate
                                                            [rev(order(plot_inst_estimates$median))]))
+plot_inst_estimates$candidate_final <- factor(plot_inst_estimates$candidate,
+                                        levels = as.vector(plot_inst_estimates$candidate
+                                                           [rev(order(results$score))]))
 
 ## Create plot
 
 # Define candidate colors
 candidate_colors <- c("#f7b4b4",
                       "#ff6600",
-                      "black", 
-                      "#FFCC33", 
-                      "#ff1300", 
+                      "#5b3c11",
+                      "#c80589", 
+                      "gray60", 
                       "#b30d00",
-                      "#002060",
-                      "#8fa02a", 
-                      "#7030a0", 
-                      "#c80589",
+                      "black",
+                      "#c23e45", 
+                      "#002060", 
+                      "#ff1300",
                       "#0070c0",
                       "#00b050")[match(as.vector(plot_inst_estimates$candidate
                                                  [rev(order(plot_inst_estimates$median))]),
                                        c("Anne Hidalgo", 
                                          "Emmanuel Macron", 
                                          "Éric Zemmour", 
-                                         "Jean Lassalle",
                                          "Fabien Roussel", 
+                                         "Jean Lassalle",
                                          "Jean-Luc Mélenchon", 
                                          "Marine Le Pen", 
                                          "Nathalie Arthaud", 
@@ -546,8 +754,33 @@ candidate_colors <- c("#f7b4b4",
                                          "Philippe Poutou",
                                          "Valérie Pécresse", 
                                          "Yannick Jadot"))]
+candidate_colors_final <- c("#f7b4b4",
+                            "#ff6600",
+                            "#5b3c11",
+                            "#c80589", 
+                            "gray60",  
+                            "#b30d00",
+                            "black",
+                            "#c23e45", 
+                            "#002060", 
+                            "#ff1300",
+                            "#0070c0",
+                            "#00b050")[match(as.vector(plot_inst_estimates$candidate_final
+                                                       [rev(order(results$score))]),
+                                             c("Anne Hidalgo", 
+                                               "Emmanuel Macron", 
+                                               "Éric Zemmour", 
+                                               "Fabien Roussel", 
+                                               "Jean Lassalle",
+                                               "Jean-Luc Mélenchon", 
+                                               "Marine Le Pen", 
+                                               "Nathalie Arthaud", 
+                                               "Nicolas Dupont-Aignan", 
+                                               "Philippe Poutou",
+                                               "Valérie Pécresse", 
+                                               "Yannick Jadot"))]
 
-# Generate plot
+# Generate plot: last estimate
 inst_plot <- plot_inst_estimates %>% 
   ggplot(aes(x = candidate, color = candidate)) +
   
@@ -576,7 +809,7 @@ inst_plot <- plot_inst_estimates %>%
                      ymax = median * 100 + .02), 
                  size = 11) +
   geom_text(aes(label = label, 
-                y = median*100), 
+                y = median * 100), 
             family = "Open Sans Condensed SemiBold", 
             vjust = -1.65) +
   
@@ -584,7 +817,8 @@ inst_plot <- plot_inst_estimates %>%
   labs(x = "", 
        y = "Intentions de votes (% votes exprimés)",
        title = "Intentions de vote au 1er tour de l'élection présidentielle de 2022",
-       subtitle = paste("Au", format(Sys.time(), "%d %B %Y")),
+       #subtitle = paste("Au", format(Sys.time(), "%d %B %Y")),
+       subtitle = "Au 8 avril 2022",
        caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Kantar, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à \nl'aide d'un modèle bayésien tenant compte des principales caractéristiques des enquêtes. Le graphique présente les médianes et intervalles de crédibilité (95% / 90% / 80% / 50%) des distributions a posteriori.")) +
   
   # Specify plot theme
@@ -630,6 +864,91 @@ inst_plot <- plot_inst_estimates %>%
                      breaks = seq(0, 30, 5), 
                      lim = c(0, 30))
 
+# Generate plot: final
+inst_plot_final <- plot_inst_estimates %>% 
+  ggplot(aes(x = candidate_final, color = candidate_final)) +
+  
+  # Plot data
+  geom_linerange(aes(ymin = lower50 * 100, 
+                     ymax = upper50 * 100), 
+                 alpha = .2, 
+                 size = 10) +
+  geom_linerange(aes(ymin = lower80 * 100, 
+                     ymax = upper80 * 100), 
+                 alpha = .2, 
+                 size = 10) +
+  geom_linerange(aes(ymin = lower90 * 100, 
+                     ymax = upper90 * 100), 
+                 alpha = .2, 
+                 size = 10) +
+  geom_linerange(aes(ymin = lower95 * 100, 
+                     ymax = upper95 * 100), 
+                 alpha = .2, 
+                 size = 10) +
+  geom_linerange(data = results,
+                 aes(ymin = score * 100 - .05, 
+                     ymax = score * 100 + .05), 
+                 size = 12, 
+                 color = "white") +
+  geom_linerange(data = results,
+                 aes(ymin = score * 100 - .02, 
+                     ymax = score * 100 + .02), 
+                 size = 11) +
+  geom_text(data = results,
+            aes(label = label_score, 
+                y = score * 100), 
+            family = "Open Sans Condensed SemiBold", 
+            vjust = -1.65) +
+  
+  # Define labs
+  labs(x = "", 
+       y = "Intentions de votes (% votes exprimés)",
+       title = "Intentions de vote et résultats officiels au 1er tour de l'élection présidentielle de 2022",
+       caption = paste0("Estimations obtenues à partir des enquêtes d'opinion réalisées par BVA, Cluster17, Elabe, Harris Interactive, IFOP, IPSOS, Kantar, Odoxa, et OpinionWay depuis septembre 2021 sur la base des rapports d'enquête publiés sur le site de la Commission des sondages, et agrégées à \nl'aide d'un modèle bayésien tenant compte des principales caractéristiques des enquêtes. Le graphique présente les intervalles de crédibilité (95% / 90% / 80% / 50%) des distributions a posteriori des intentions de vote. Les barres verticales représentent les résultats officiels.")) +
+  
+  # Specify plot theme
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(color = "#2b2b2b", 
+                                          linetype = "dotted", 
+                                          size = 0.05),
+        panel.grid.major.y = element_line(color = "gray99", 
+                                          size = 10),
+        text = element_text(family = "Open Sans Condensed", 
+                            size = 7.5),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 12, 
+                                   family = "Open Sans Condensed", 
+                                   face = "bold"),
+        axis.title = element_blank(),
+        axis.line.x = element_line(color = "#2b2b2b", 
+                                   size = 0.15),
+        axis.ticks.x = element_line(color = "#2b2b2b", 
+                                    size = 0.15),
+        axis.ticks.length = unit(.2, "cm"),
+        plot.title = element_text(size = 20, 
+                                  family = "Open Sans Condensed ExtraBold", 
+                                  face = "bold"),
+        plot.subtitle = element_text(size = 15),
+        plot.title.position = "plot",
+        legend.position = "none",
+        plot.caption = element_text(color = "gray30", 
+                                    hjust = 0, 
+                                    margin = margin(t = 15)),
+        plot.margin = unit(rep(0.5, 4), "cm")) +
+  
+  # Candidate colors
+  guides(color = guide_legend(nrow = 3, byrow = TRUE)) +
+  scale_colour_manual(values = candidate_colors_final) +
+  scale_fill_manual(values = candidate_colors_final) +
+  
+  # Percent axis
+  scale_y_continuous(labels = function(x) paste0(x, "%"), 
+                     expand = c(0, 0), 
+                     breaks = seq(0, 30, 5), 
+                     lim = c(0, 30))
+
 
 ## Export plot
 ggsave(inst_plot, 
@@ -639,6 +958,17 @@ ggsave(inst_plot,
        device = cairo_pdf)
 ggsave(inst_plot, 
        filename = "PollsFrance2022_latest.png",
+       height = 7.5, 
+       width = 10, 
+       device = "png", 
+       bg = "white")
+ggsave(inst_plot_final, 
+       filename = "PollsFrance2022_final.pdf",
+       height = 7.5, 
+       width = 10,
+       device = cairo_pdf)
+ggsave(inst_plot_final, 
+       filename = "PollsFrance2022_final.png",
        height = 7.5, 
        width = 10, 
        device = "png", 
