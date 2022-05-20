@@ -14,7 +14,7 @@ I use data from all voting intention polls fielded since September 1, 2021, base
 
 For each scenario _i_ (part of poll _p_ = _p[i]_) and each candidate _c_, _s<sup>*</sup><sub>ci</sub>_ is the (adjusted) share of respondents who indicated support for candidate _c_. _s<sup>*</sup><sub>ci</sub>_ is typically not available, as polling firm round their estimates, so that one can only observe _s<sub>ci</sub>_. To account for the uncertainty induced by the rounding, I model _s<sup>*</sup><sub>ci</sub>_ as a latent parameter defined by
 
-$$\left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)$$
+$$\left( s^{\star}_{ci} = s_{ci} + \epsilon_{ci}\sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)$$
 
 $$ s^{\star}_{ci} = s_{ci} + \epsilon_{ci} $$
 
