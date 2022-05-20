@@ -34,16 +34,15 @@ where $(B_{3k}(\cdot))\_k$ is a sequence of $B$-splines. I define a poll's date 
 
 ### Poll and House Effects
 
-In order to partially pool information among the various scenarios of the same poll, I include a candidate-specific poll effect 𝜇<sub>_cp[i]_</sub>, and I also adjust for house effects (𝜆<sub>_ch[i]_</sub>).
+In order to partially pool information among the various scenarios of the same poll, I include a candidate-specific poll effect $(\mu_{cp\[i\]})$, and I also adjust for house effects $(\lambda_{ch\[i\]})$.
 
 ### Zemmour and Taubira Adjustments
 
-_M<sub>i</sub>_ is a vector of (standardized) dummies that flag whether Éric Zemmour and Christiane Taubira were among the tested candidates. I include this vector because not all polls included scenarios that tested Éric Zemmour as candidate in September. In the same vein, polls before December 15 did not include scenarios with Christiane Taubira, and not all of them did between December 15 and January 15.
+$M_i$ is a vector of (standardized) dummies that flag whether Éric Zemmour and Christiane Taubira were among the tested candidates. I include this vector because not all polls included scenarios that tested Éric Zemmour as candidate in September. In the same vein, polls before December 15 did not include scenarios with Christiane Taubira, and not all of them did between December 15 and January 15.
 
 The current specification leverages polls that include scenarios both with and without Zemmour (or Taubira) to estimate the impact of not including him (or her) among the potential candidates, and thereby allows me to adjust the results from polls that do not include Zemmour (or Taubira) scenarios.
 
 ### Other Covariates
 
-The vector _X<sub>i</sub>_ includes two (standardized) dummies that adjust for the subsample of respondents that the polling firm calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and one additional (standardized) dummy that adjusts for whether the poll is a rolling poll. To allow the effect of these covariates to vary as the election date gets closer, these coefficients (except for the rolling poll dummy, for now) incorporate a time trend:
-
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta.png?raw=true)
+The vector $X_i$ includes two (standardized) dummies that adjust for the subsample of respondents that the polling firm calculated their estimates on (all respondents, only respondents who are absolutely sure that they will vote in April 2022, or an intermediary subsample), and one additional (standardized) dummy that adjusts for whether the poll is a rolling poll. To allow the effect of these covariates to vary as the election date gets closer, these coefficients (except for the rolling poll dummy, for now) incorporate a time trend:
+$$ \beta_c^{(u)}(date_i)\ =\ \beta_{c0}^{(u)}\ +\ \nu_c(date_i\ -\ 1). $$
