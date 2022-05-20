@@ -16,7 +16,7 @@ For each scenario _i_ (part of poll _p_ = _p[i]_) and each candidate _c_, _s<sup
 
 $$\left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)$$
 
-$$ s^{\star}_{ci} = s_{ci} + \varepsilon_{ci} $$
+$$ s^{\star}_{ci} = s_{ci} + \epsilon_{ci} $$
 
 ![](https://github.com/flavienganter/polls-2022-election/blob/main/img/latent_s.png?raw=true)
 
