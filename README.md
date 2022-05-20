@@ -16,21 +16,17 @@ For each scenario $i$ (part of poll $p\ =\ p_{[i]}$) and each candidate $c$, $s_
 
 $$ s_{ci}^*\ =\ s_{ci}\ +\ \varepsilon_{ci} $$
 
-with $\varepsilon_{ci}\sim\mathcal{U}\[b_{ci}^l;b_{ci}^u\]$.
+with $\varepsilon_{ci}\ \sim\ \mathcal{U}\[b_{ci}^l;b_{ci}^u\]$, where $b_{ci}^l$ and $b_{ci}^u$ define the interval around $s_{ci}$ in which $s_{ci}^{\*}$ can be.
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/epsilon.png?raw=true)
+Noting $N_i$ the total number of respondents disclosing their voting intentions in the scenario $i$, I model the latent variable $s_{ci}^{\*}$ with a Beta distribution:
 
-where _b<sub>ci</sub><sup>l</sup>_ and _b<sub>ci</sub><sup>u</sup>_ define the interval around _s<sub>ci</sub>_ in which _s<sup>*</sup><sub>ci</sub>_ can be.
+$$ s_{ci}^{\*}\ \sim\ \text{Beta}(\theta_{ci}N_i,(1-\theta_{ic})N_i) $$
 
-Noting _N<sub>i</sub>_ the total number of respondents disclosing their voting intentions in the scenario _i_, I model the latent variable _s<sup>*</sup><sub>ci</sub>_ with a Beta distribution:
+where $\theta_{ci}$ is defined as
 
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/beta_m.png?raw=true)
+$$ \theta_{ci}\ \equiv\ \text{logit}^{-1}(\psi_c(dates_i)\ +\ \mu_{cp\[i\]}\ +\ \lambda_{ch\[i\]}\ +\ M_i\lambda_{cm\[date_i\]}\ +\ X_i\beta_c(date_i)) $$
 
-where 𝜽<sub>_ci_</sub> is defined as:
-
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/theta.png?raw=true)
-
-and _date<sub>i</sub>_ is the date, centered so that _date<sub>i</sub>_ = 1 on September 1, 2021.
+and $date_i$ is the date, centered so that $date_i\ =\ 1$ on September 1, 2021.
 
 Two elements motivate the choice of approximating the posterior distribution by a series of Beta regression models, and not by a single multinomial model, which would arguably be the most logical choice:
 1. The Beta distribution allows me to model voting intentions directly instead of indirectly, via the number of respondents who indicated support for a given candidate. This is particularly convenient as the only estimates available, _s<sub>ci</sub>_, is a rounded and adjusted proportion.
