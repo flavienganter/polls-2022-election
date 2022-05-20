@@ -30,9 +30,7 @@ Two elements motivate the choice of approximating the posterior distribution by 
 
 I model the evolutions of voting intentions over time with a spline of degree 3 with $K\ =\ 12$ knots:
 $$ \psi_c(date_i)\ =\ \alpha_{c0}\cdot date_i\ +\ \sum_{k=1}^K\alpha_{ck}B_{3k}(date_i) $$
-where $(B_{3k}(\cdot))\_k$ is a sequence of $B$-splines. I define a poll's date as the median day of the fielding period, or as the day immediately following the median when that median is not properly defined. To enforce smoothness and prevent the model from overfitting, I impose a random-walk prior on $(\alpha_{ck})\_{ck}$:
-
-![](https://github.com/flavienganter/polls-2022-election/blob/main/img/prior_alpha1.png?raw=true)
+where $(B_{3k}(\cdot))\_k$ is a sequence of $B$-splines. I define a poll's date as the median day of the fielding period, or as the day immediately following the median when that median is not properly defined. To enforce smoothness and prevent the model from overfitting, I impose a random-walk prior on $(\alpha_{ck})\_{ck}$: $\alpha_{c0}\ \sim\ \mathcal{N}(0,\sigma_{\alpha 0})$ and $\alpha_{ck}\ \sim\ \mathcal{N}(\alpha_{ck-1},\tau_{c\alpha})$, $\forall k>0$.
 
 ### Poll and House Effects
 
