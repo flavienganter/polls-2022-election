@@ -12,7 +12,7 @@ Evolutions of voting intentions since September 2021 (medians of the posterior d
 
 I use data from all voting intention polls fielded since September 1, 2021, based on the survey reports available on the [Commission des sondages website](https://www.commission-des-sondages.fr/notices/). I build on [Heidemanns, Gelman and Morris (2020)](https://hdsr.mitpress.mit.edu/pub/nw1dzd02/release/1) to build a poll aggregator that does just that—aggregating polls—with no prediction intention whatsoever. The model is estimated with Stan.
 
-For each scenario $i$ (part of poll $p\ =\ p_{[i]}$) and each candidate $c$, $s_{ci}$ is the (adjusted) share of respondents who indicated support for candidate $c$. _s<sup>*</sup><sub>ci</sub>_ is typically not available, as polling firm round their estimates, so that one can only observe _s<sub>ci</sub>_. To account for the uncertainty induced by the rounding, I model _s<sup>*</sup><sub>ci</sub>_ as a latent parameter defined by
+For each scenario $i$ (part of poll $p\ =\ p_{[i]}$) and each candidate $c$, $s_{ci}^{\*}$ is the (adjusted) share of respondents who indicated support for candidate $c$. _s<sup>*</sup><sub>ci</sub>_ is typically not available, as polling firm round their estimates, so that one can only observe _s<sub>ci</sub>_. To account for the uncertainty induced by the rounding, I model _s<sup>*</sup><sub>ci</sub>_ as a latent parameter defined by
 
 $$ s_{ci}^*\ =\ s_{ci}\ +\ \varepsilon_{ci} $$
 
