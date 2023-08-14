@@ -17,9 +17,11 @@ $$ s_{ci}^{\*}\ =\ s_{ci}\ +\ \varepsilon_{ci} $$
 with $\varepsilon_{ci}\ \sim\ \mathcal{U}\[b_{ci}^l;b_{ci}^u\]$, where $b_{ci}^l$ and $b_{ci}^u$ define the interval around $s_{ci}$ in which $s_{ci}^{\*}$ can be.
 
 Noting $N_i$ the total number of respondents disclosing their voting intentions in the scenario $i$, I model the latent variable $s_{ci}^{\*}$ with a Beta distribution:
+
 $$
 s_{ci}^{\*}\ \sim\ \text{Beta}(\theta_{ci}N_i,(1-\theta_{ic})N_i)
 $$
+
 where $\theta_{ci}$ is defined as
 $$ \theta_{ci}\ \equiv\ \text{logit}^{-1}(\psi_c(date_i)\ +\ \mu_{cp\[i\]}\ +\ \lambda_{ch\[i\]}\ +\ M_i\lambda_{cm\[date_i\]}\ +\ X_i\beta_c(date_i)) $$
 and $date_i$ is the date, centered so that $date_i\ =\ 1$ on September 1, 2021.
