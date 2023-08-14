@@ -23,7 +23,9 @@ s_{ci}^{\*}\ \sim\ \text{Beta}(\theta_{ci}N_i,(1-\theta_{ic})N_i)
 $$
 
 where $\theta_{ci}$ is defined as
+
 $$ \theta_{ci}\ \equiv\ \text{logit}^{-1}(\psi_c(date_i)\ +\ \mu_{cp\[i\]}\ +\ \lambda_{ch\[i\]}\ +\ M_i\lambda_{cm\[date_i\]}\ +\ X_i\beta_c(date_i)) $$
+
 and $date_i$ is the date, centered so that $date_i\ =\ 1$ on September 1, 2021.
 
 Two elements motivate the choice of approximating the posterior distribution by a series of Beta regression models, and not by a single multinomial model, which would arguably be the most logical choice:
@@ -33,7 +35,10 @@ Two elements motivate the choice of approximating the posterior distribution by 
 ### Splines
 
 I model the evolutions of voting intentions over time with a spline of degree 3 with $K\ =\ 12$ knots:
-$$ \psi_c(date_i)\ =\ \alpha_{c0}\cdot date_i\ +\ \sum_{k=1}^K\alpha_{ck}B_{3k}(date_i) $$
+
+$$ 
+\psi_c(date_i)\ =\ \alpha_{c0}\cdot date_i\ +\ \sum_{k=1}^K\alpha_{ck}B_{3k}(date_i) 
+$$
 where $(B_{3k}(\cdot))\_k$ is a sequence of $B$-splines. I define a poll's date as the median day of the fielding period, or as the day immediately following the median when that median is not properly defined. To enforce smoothness and prevent the model from overfitting, I impose a random-walk prior on $(\alpha_{ck})\_{ck}$: $\alpha_{c0}\ \sim\ \mathcal{N}(0,\sigma_{\alpha 0})$ and $\alpha_{ck}\ \sim\ \mathcal{N}(\alpha_{ck-1},\tau_{c\alpha})$, $\forall k>0$.
 
 ### Poll and House Effects
